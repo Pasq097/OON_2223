@@ -1,3 +1,4 @@
+
 # Define the 'constructor',the 'getter' and the 'setter' methods for all the attributes
 class SignalInformation:
     """model the signal information"""

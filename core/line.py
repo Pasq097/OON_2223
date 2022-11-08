@@ -1,3 +1,4 @@
+
 class Line:
     """Model for the lines"""
 

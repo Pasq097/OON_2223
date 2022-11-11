@@ -1,3 +1,5 @@
+import Signal_Information
+
 
 class Line:
     """Model for the lines"""
@@ -33,7 +35,7 @@ class Line:
 
     def latency_generation(self, length):
         # the light travel through the fiber at around 2/3 of the speed  of light
-        c = 3 * 10(**8)
+        c = 3 * 10 ** 8
         c_f = c * (2 / 3)
         latency = length / c_f
         return latency
@@ -43,5 +45,14 @@ class Line:
         noise_power = length * 1 * 10 ** (-9) * signal_power
         return noise_power
 
- #   def propagate(self):
+    def propagate(self, signal_information):
+        # if I'm on a line e.g. AB I can only go on a successive node e.g. B it's simpler thant node propagate method
+        # it has to update latency and noise_power
 
+        for node in self._successive:
+            self._successive[node].propagate(signal_information)
+        # we have to "feed" the method the length of the current line
+        noise_power = Line.noise_generation(self._lines[node].length, 1 * 10 ** (-3))
+        signal_information.update_noise_power(noise_power)
+        latency = Line.latency_generation(self._lines[node].length)
+        signal_information.update_latency(latency)

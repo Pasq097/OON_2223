@@ -4,6 +4,7 @@ import line
 import numpy as np
 import matplotlib.pyplot as plt
 
+from core import PROVA_DFS
 
 
 class Network:
@@ -72,10 +73,41 @@ class Network:
         x = np.array(x_values)
         y = np.array(y_values)
         plt.scatter(x, y)
+
+        for temp in self._nodes:
+            q1 = self._nodes[temp].position
+
+            for temp2 in self._nodes[temp].connected_nodes:
+                q2 = self._nodes[temp2].position
+                x, y = [q1[0], q2[0]], [q1[1], q2[1]]
+                plt.plot(x, y)
         plt.show()
 
-    def find_paths(self):
-        """ Have to find all the possible paths given a start node label and a finish node label"""
+    def connect(self):
+        # need to call node and create successive as dictionary { node : "lines connected to the node"}
+        for key in self._nodes:  # it gives the list of the letter A, B ,C....
+            for temp in self._nodes[key].connected_nodes:  # it gives the connected nodes of the specific object node
+                self._nodes[key].successive[key + temp] = self._lines[key + temp]
+        # need to call line and create successive as dictionary {line : "node connected to the line"}
+        for key in self._lines:
+            self._lines[key].successive[key] = self._nodes[key[1]]
+
+    def find_all_paths(self, start, end, path=[]):        # DFS based algorithm
+        path = path + [start]
+        if start == end:
+            return [path]
+        paths = []
+        for node in self._dictionary[start]["connected_nodes"]:
+            if node not in path:
+                newpaths = PROVA_DFS.find_all_paths(self._dictionary, node, end, path)
+                for newpath in newpaths:
+                    paths.append(newpath)
+        return paths
+
+    #def propagate(self,signal_information):
+        # has to propagate the signal_information through the specified path
+        #return the modified spectral_information's
+
 
 
 
@@ -83,6 +115,8 @@ net1 = Network()
 a = net1.dictionary
 b = net1.nodes
 c = net1.lines
-print(c)
-print(b)
+d = net1.connect
+e = net1.find_all_paths("A", "F")
+print(e)
+
 net1.draw(a)

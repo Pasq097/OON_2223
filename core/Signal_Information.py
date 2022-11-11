@@ -1,4 +1,3 @@
-
 # Define the 'constructor',the 'getter' and the 'setter' methods for all the attributes
 class SignalInformation:
     """model the signal information"""
@@ -45,13 +44,13 @@ class SignalInformation:
     # Define the methods to update the signal and noise powers and the latency given an increment of these quantities
 
     def update_signal_power(self, increment):
-        self.signal_power += increment
+        self._signal_power += increment
 
     def update_noise_power(self, increment):
         self._noise_power += increment
 
     def update_latency(self, increment):
-        self.latency += increment
+        self._latency += increment
 
     # Define a method to update the path once a node is crossed
     def update_path(self):

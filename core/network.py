@@ -43,7 +43,8 @@ class Network:
                 distances.append(distance)
         lines = []
         for _ in edge:
-            lines.append(line.Line(edge, distances))
+            for var in distances:
+                lines.append(line.Line(edge, var))
         self._lines = {k: v for k, v in zip(edge, lines)}
 
     @property
@@ -92,7 +93,7 @@ class Network:
         for key in self._lines:
             self._lines[key].successive[key] = self._nodes[key[1]]
 
-    def find_all_paths(self, start, end, path=[]):        # DFS based algorithm
+    def find_all_paths(self, start, end, path=[]):  # DFS based algorithm
         path = path + [start]
         if start == end:
             return [path]
@@ -104,19 +105,24 @@ class Network:
                     paths.append(newpath)
         return paths
 
-    #def propagate(self,signal_information):
+    def propagate(self, signal_information):
         # has to propagate the signal_information through the specified path
-        #return the modified spectral_information's
+        # return the modified spectral_information's
+        # it call the first propagate, it's like starting the domino
+        for node in self._nodes:
+            if len(signal_information.path) == 0:
+                return
+            if signal_information.path[0] == node[0]:
+                self._nodes[node].propagate(signal_information)
 
 
+#net1 = Network()
+# a = net1.dictionary
+# b = net1.nodes
+#c = net1.lines
+# d = net1.connect
+# e = net1.find_all_paths("A", "F")
+#print(c)
+#print(net1.lines['AB'].length)
 
-
-net1 = Network()
-a = net1.dictionary
-b = net1.nodes
-c = net1.lines
-d = net1.connect
-e = net1.find_all_paths("A", "F")
-print(e)
-
-net1.draw(a)
+# net1.draw(a)

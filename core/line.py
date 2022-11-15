@@ -42,7 +42,7 @@ class Line:
 
     def noise_generation(self, length, signal_power):
         # 1e-9 * signal_power * length
-        noise_power = length * 1 * 10 ** (-9) * signal_power
+        noise_power = length * (10 ** (-9)) * signal_power
         return noise_power
 
     def propagate(self, signal_information):
@@ -52,7 +52,7 @@ class Line:
         for node in self._successive:
             self._successive[node].propagate(signal_information)
         # we have to "feed" the method the length of the current line
-        noise_power = Line.noise_generation(self._lines[node].length, 1 * 10 ** (-3))
+        noise_power = self.noise_generation(self._length, signal_information.signal_power)
         signal_information.update_noise_power(noise_power)
-        latency = Line.latency_generation(self._lines[node].length)
+        latency = self.latency_generation(self._length)
         signal_information.update_latency(latency)

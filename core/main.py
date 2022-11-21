@@ -12,7 +12,7 @@ import math
 # find all possible nodes couples
 net1 = network.Network()
 nodes_in_network = list(net1.dictionary.keys())
-com = itertools.combinations(nodes_in_network, 2)
+com = itertools.permutations(nodes_in_network, 2)
 
 res = []
 all_possible_paths = []
@@ -29,6 +29,7 @@ for paths in all_possible_paths:
 
 # find the total accumulated latency
 net1.connect()
+net1.draw()
 
 total_accumulated_latency = []
 total_accumulated_noise = []
@@ -47,7 +48,9 @@ mylist = [res, total_accumulated_latency, total_accumulated_noise, signal_to_noi
 
 # signal-to-noise ratio 10log(signal_power/noise_power)
 
-column = ['path', 'total latency', 'accumulated noise', 'signa-to-noise-ratio [dB]']
+column = ['path', 'total latency', 'accumulated noise', 'signal-to-noise-ratio [dB]']
 pd.set_option("display.precision", 10)
 df = pd.DataFrame(mylist, column, dtype=float)
 print(df)
+
+

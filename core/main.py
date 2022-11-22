@@ -50,7 +50,8 @@ mylist = [res, total_accumulated_latency, total_accumulated_noise, signal_to_noi
 
 column = ['path', 'total latency', 'accumulated noise', 'signal-to-noise-ratio [dB]']
 pd.set_option("display.precision", 10)
+pd.set_option('display.max_columns', None)
 df = pd.DataFrame(mylist, column, dtype=float)
+df = df.transpose()
 print(df)
-
 

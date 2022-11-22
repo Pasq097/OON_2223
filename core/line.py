@@ -1,4 +1,3 @@
-import Signal_Information
 
 
 class Line:

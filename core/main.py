@@ -39,7 +39,7 @@ for temp in all_possible_paths:
     net1.propagate(s1)
     total_accumulated_latency.append(s1.latency)
     total_accumulated_noise.append(s1.noise_power)
-    x = math.log(s1.signal_power / s1.noise_power)
+    x = math.log10(s1.signal_power / s1.noise_power)
     y = 10 * x
     signal_to_noise_ratio.append(y)
 mylist = [res, total_accumulated_latency, total_accumulated_noise, signal_to_noise_ratio]

@@ -6,6 +6,7 @@ class Line:
     def __init__(self, label, length):  # Constructor
         self._label = label
         self._length = length
+        self._state = 1
         self._successive = {}
 
     @property  # Getter
@@ -15,6 +16,10 @@ class Line:
     @property
     def length(self):
         return self._length
+
+    @property
+    def state(self):
+        return self._state
 
     @property
     def successive(self):
@@ -27,6 +32,10 @@ class Line:
     @length.setter
     def length(self, length):
         self._length = length
+
+    @state.setter
+    def state(self, state):
+        self._state = state
 
     @successive.setter
     def successive(self, successive):
@@ -50,6 +59,8 @@ class Line:
 
         for node in self._successive:
             self._successive[node].propagate(signal_information)
+
+        #self._state = 0
         # we have to "feed" the method the length of the current line
         noise_power = self.noise_generation(self._length, signal_information.signal_power)
         signal_information.update_noise_power(noise_power)

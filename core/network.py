@@ -8,6 +8,7 @@ import itertools
 import math
 import Signal_Information
 from core import PROVA_DFS
+import Cheking_lines
 import connection
 
 
@@ -147,7 +148,7 @@ class Network:
             self.propagate(s1)
             total_accumulated_latency.append(s1.latency)
             total_accumulated_noise.append(s1.noise_power)
-            x = math.log(s1.signal_power / s1.noise_power)
+            x = math.log10(s1.signal_power / s1.noise_power)
             y = 10 * x
             signal_to_noise_ratio.append(y)
         mylist = [res, total_accumulated_latency, total_accumulated_noise, signal_to_noise_ratio]
@@ -191,9 +192,22 @@ class Network:
         c = []
         for temp4 in indexes:
             c.append(self._df['signal-to-noise-ratio [dB]'][temp4])
-        max_value = max(c)
-        w = c.index(max_value)
-        best_path = new_list[w]
+
+            dictionary_of_val = dict(zip(new_list, c))
+            # print(dictionary_of_val)
+
+        res = sorted(dictionary_of_val.items(), key=lambda x: x[1], reverse=True)
+        best_path = []
+        for temp in res:
+            a = temp[0]
+            a = a.replace('->', '')  # here we have the current best path
+            # is the current path free?
+            nv = [''.join(pair) for pair in zip(a[:-1], a[1:])]
+            # print(nv)
+            for temp2 in nv:
+                if self._lines[temp2].state == 1:
+                    best_path = a
+                    break
         return best_path
 
     def find_best_latency(self, node_1, node_2):
@@ -202,7 +216,7 @@ class Network:
         for temp in row_list:
             if node_1 == temp[0] and node_2 == temp[-1]:
                 new_list.append(temp)
-        a = []
+
         indexes = []
         for temp2 in new_list:
             a = list(self._df['path'].values == temp2)
@@ -212,51 +226,53 @@ class Network:
         c = []
         for temp4 in indexes:
             c.append(self._df['total latency'][temp4])
-        min_value = min(c)
-        k = c.index(min_value)
-        best_path = new_list[k]
-        return best_path  # should return only the best path
+            dictionary_of_val = dict(zip(new_list, c))
+
+        res = sorted(dictionary_of_val.items(), key=lambda x: x[1])
+        possible_paths_sorted = []
+        for temp5 in res:
+            temporary = temp5[0]
+            temporary = temporary.replace('->', '')
+            possible_paths_sorted.append(temporary)
+
+        return possible_paths_sorted  # it returns all possible paths sorted from fastest to slower
 
     def stream(self, list_of_connections, selection='latency'):
-        for temp in list_of_connections:  # remember that you're taking the instances
-            # take the power from connection obj, take the path from best_latency/snr create the new signal obj instaces
-            if selection == "snr":  # in this case we set the path with the best snr and its latency
-                b = self.find_best_snr(temp.input, temp.output)
-                b = b.replace('->', '')
-                path = []
-                for temp2 in b:
-                  path.append(temp2)
-                signal_power = temp.signal_power
-                signal = Signal_Information.SignalInformation(signal_power, path)
-                self.propagate(signal)
-                x = math.log(signal.signal_power / signal.noise_power)
-                y = 10 * x
-                temp.snr = 1
-                temp.latency = signal.latency         # set the latency with the respective value given the snr
-            elif selection == 'latency':  # in this case we set the path with the best latency and its own snr
-                a = self.find_best_latency(temp.input, temp.output)
-                a = a.replace('->', '')
-                path = []
-                for temp2 in a:
-                    path.append(temp2)
-                signal_power = temp.signal_power
-                signal = Signal_Information.SignalInformation(signal_power, path)
-                self.propagate(signal)
-                x = math.log(signal.signal_power / signal.noise_power)
-                y = 10 * x
-                temp.snr = y
-                temp.latency = signal.latency
+        if selection == 'latency':
+            for temp in list_of_connections:
+                possible_paths = self.find_best_latency(temp.input, temp.output)
+                print(possible_paths)
+                for temporary in possible_paths:
+                    #print(temporary)
+                    flag_is = Cheking_lines.check_the_lines(temporary, self._lines)
+                    #print(flag_is)
+                    if flag_is == 1:
+                        the_path_is = temporary
+                        #print(the_path_is)
+                        break
+                #print("the path choosen is " +the_path_is)
 
-# net1 = Network()
-# net1.connect()
-# net1.find_best_snr()
-# net1.draw()
-# a = net1.dictionary
-# b = net1.nodes
-# c = net1.lines
-# d = net1.connect
-# e = net1.find_all_paths("A", "F")
+                if flag_is == 1:
+                    signal_power = temp.signal_power
+                    signal = Signal_Information.SignalInformation(signal_power, the_path_is)
+                    self.propagate(signal)
 
-# print(net1.lines['AB'].length)
+                    lines_to_use = [''.join(pair) for pair in zip(the_path_is[:-1], the_path_is[1:])]
 
-# net1.draw(a)
+                    for temp5 in lines_to_use:
+                        #print("the line to put at zero is " + temp5)
+
+                        self._lines[temp5].state = 0
+                        #print(self._lines[temp5].state)
+
+                        # print(x)
+
+                        # print(self._lines[x].state)
+
+                    x = math.log10(signal.signal_power / signal.noise_power)
+                    y = 10 * x
+                    temp.snr = y
+                    temp.latency = signal.latency
+                elif flag_is == 0:
+                    temp.snr = 0
+                    temp.latency = 0

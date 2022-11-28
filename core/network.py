@@ -9,7 +9,6 @@ import math
 import Signal_Information
 from core import PROVA_DFS
 import Cheking_lines
-import connection
 
 
 class Network:
@@ -152,11 +151,8 @@ class Network:
             y = 10 * x
             signal_to_noise_ratio.append(y)
         mylist = [res, total_accumulated_latency, total_accumulated_noise, signal_to_noise_ratio]
-
         # total accumulated noise
-
         # signal-to-noise ratio 10log(signal_power/noise_power)
-
         column = ['path', 'total latency', 'accumulated noise', 'signal-to-noise-ratio [dB]']
         pd.set_option("display.precision", 10)
         self._df = pd.DataFrame(mylist, column, dtype=float)
@@ -174,7 +170,6 @@ class Network:
                 self._nodes[node].propagate(signal_information)
 
     # Define a method that returns the path with the best snr for a given pair of nodes
-
     def find_best_snr(self, node_1, node_2):
         # need to confront all the snr of the specified paths
         row_list = self._df['path'].tolist()
@@ -182,7 +177,6 @@ class Network:
         for temp in row_list:
             if node_1 == temp[0] and node_2 == temp[-1]:
                 new_list.append(temp)
-        a = []
         indexes = []
         for temp2 in new_list:
             a = list(self._df['path'].values == temp2)
@@ -192,23 +186,16 @@ class Network:
         c = []
         for temp4 in indexes:
             c.append(self._df['signal-to-noise-ratio [dB]'][temp4])
-
             dictionary_of_val = dict(zip(new_list, c))
-            # print(dictionary_of_val)
 
         res = sorted(dictionary_of_val.items(), key=lambda x: x[1], reverse=True)
-        best_path = []
-        for temp in res:
-            a = temp[0]
-            a = a.replace('->', '')  # here we have the current best path
-            # is the current path free?
-            nv = [''.join(pair) for pair in zip(a[:-1], a[1:])]
-            # print(nv)
-            for temp2 in nv:
-                if self._lines[temp2].state == 1:
-                    best_path = a
-                    break
-        return best_path
+        possible_paths_sorted = []
+        for temp5 in res:
+            temporary = temp5[0]
+            temporary = temporary.replace('->', '')
+            possible_paths_sorted.append(temporary)
+
+        return possible_paths_sorted
 
     def find_best_latency(self, node_1, node_2):
         row_list = self._df['path'].tolist()
@@ -216,7 +203,6 @@ class Network:
         for temp in row_list:
             if node_1 == temp[0] and node_2 == temp[-1]:
                 new_list.append(temp)
-
         indexes = []
         for temp2 in new_list:
             a = list(self._df['path'].values == temp2)
@@ -227,32 +213,34 @@ class Network:
         for temp4 in indexes:
             c.append(self._df['total latency'][temp4])
             dictionary_of_val = dict(zip(new_list, c))
-
         res = sorted(dictionary_of_val.items(), key=lambda x: x[1])
         possible_paths_sorted = []
         for temp5 in res:
             temporary = temp5[0]
             temporary = temporary.replace('->', '')
             possible_paths_sorted.append(temporary)
-
         return possible_paths_sorted  # it returns all possible paths sorted from fastest to slower
 
     def stream(self, list_of_connections, selection='latency'):
         if selection == 'latency':
             for temp in list_of_connections:
                 possible_paths = self.find_best_latency(temp.input, temp.output)
-                print(possible_paths)
+                # print(possible_paths)
+                k = 0
                 for temporary in possible_paths:
-                    #print(temporary)
+                    # print(temporary)
                     flag_is = Cheking_lines.check_the_lines(temporary, self._lines)
-                    #print(flag_is)
+                    # print(flag_is)
                     if flag_is == 1:
                         the_path_is = temporary
-                        #print(the_path_is)
+                        # print(the_path_is)
                         break
-                #print("the path choosen is " +the_path_is)
+                    else:
+                        k = k + 1
+                # print("the path choosen is " +the_path_is)
+                # print(k)
 
-                if flag_is == 1:
+                if k < len(possible_paths):
                     signal_power = temp.signal_power
                     signal = Signal_Information.SignalInformation(signal_power, the_path_is)
                     self.propagate(signal)
@@ -260,19 +248,52 @@ class Network:
                     lines_to_use = [''.join(pair) for pair in zip(the_path_is[:-1], the_path_is[1:])]
 
                     for temp5 in lines_to_use:
-                        #print("the line to put at zero is " + temp5)
-
+                        # print("the line to put at zero is " + temp5)
                         self._lines[temp5].state = 0
-                        #print(self._lines[temp5].state)
-
+                        #  print(self._lines[temp5].state)
                         # print(x)
-
                         # print(self._lines[x].state)
 
                     x = math.log10(signal.signal_power / signal.noise_power)
                     y = 10 * x
                     temp.snr = y
                     temp.latency = signal.latency
-                elif flag_is == 0:
+                elif k >= len(possible_paths):
                     temp.snr = 0
-                    temp.latency = 0
+                    temp.latency = None
+        elif selection == 'snr':
+            for temp in list_of_connections:
+                possible_paths = self.find_best_snr(temp.input, temp.output)
+                # print(possible_paths)
+                k = 0
+                for temporary in possible_paths:
+                    # print(temporary)
+                    flag_is = Cheking_lines.check_the_lines(temporary, self._lines)
+                    # print(flag_is)
+                    if flag_is == 1:
+                        the_path_is = temporary
+                        # print(the_path_is)
+                        break
+                    else:
+                        k = k + 1
+                # print("the path choosen is " +the_path_is)
+                # print(k)
+
+                if k < len(possible_paths):
+                    signal_power = temp.signal_power
+                    signal = Signal_Information.SignalInformation(signal_power, the_path_is)
+                    self.propagate(signal)
+                    lines_to_use = [''.join(pair) for pair in zip(the_path_is[:-1], the_path_is[1:])]
+                    for temp5 in lines_to_use:
+                        # print("the line to put at zero is " + temp5)
+                        self._lines[temp5].state = 0
+                        # print(self._lines[temp5].state)
+                        # print(x)
+                        # print(self._lines[x].state)
+                    x = math.log10(signal.signal_power / signal.noise_power)
+                    y = 10 * x
+                    temp.snr = y
+                    temp.latency = signal.latency
+                elif k >= len(possible_paths):
+                    temp.snr = 0
+                    temp.latency = None

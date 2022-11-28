@@ -13,23 +13,37 @@ list_of_nodes = []
 connections = []
 for keys in weighted_paths.dictionary:
     list_of_nodes.append(keys)
-    #special = ['A', 'B']
-
-for k in range(4):
+    # special = ['A', 'B']
+for k in range(100):
     inp, out = random.sample(list_of_nodes, 2)  # this should take two unique elements from the list
-    #print("this is dest:" + inp + out)
+    #print("this is destination:" + inp + out)
     connections.append(connection.Connection(inp, out, 1 * 10 ** -3))
-weighted_paths.stream(connections)
-print(len(connections))
+sel = 'snr'
+weighted_paths.stream(connections, sel)
+#print(len(connections))
+if sel == 'snr':
+    list_of_snr = []
+    for temp2 in connections:
+        list_of_snr.append(temp2.snr)
+        # print(temp2.snr)
+    res = list(filter(lambda item: item != 0, list_of_snr))
+    # print(res)
+    # print(len(res))
+    plt.xlabel('SNR [dB]', fontweight='bold')
+    plt.ylabel('occurrences', fontweight='bold')
+    plt.title("SNR distribution")
+    plt.hist(res, bins=20)
+    plt.show()
 
-list_of_latency = []
-list_of_snr = []
-for temp in connections:
-    list_of_latency.append(temp.latency)
-    #print(temp.latency)
-
-plt.hist(list_of_latency, bins=10)
-plt.show()
-# plot the graphs
-# for the latency
-
+else:
+    list_of_latency = []
+    for temp in connections:
+        list_of_latency.append(temp.latency)
+        # print(temp.latency)
+    res = list(filter(lambda item: item is not None, list_of_latency))
+    # print(len(res))
+    plt.xlabel('latency', fontweight='bold')
+    plt.ylabel('occurrences', fontweight='bold')
+    plt.title("Latency distribution")
+    plt.hist(res, bins=12)
+    plt.show()

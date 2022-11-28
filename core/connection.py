@@ -6,7 +6,7 @@ class Connection:
         self._input = input
         self._output = output
         self._signal_power = signal_power
-        self._latency = 0
+        self._latency = None
         self.snr = 0
 
     @property  # Getter

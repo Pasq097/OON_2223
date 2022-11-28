@@ -60,7 +60,7 @@ class Line:
         for node in self._successive:
             self._successive[node].propagate(signal_information)
 
-        #self._state = 0
+        # self._state = 0
         # we have to "feed" the method the length of the current line
         noise_power = self.noise_generation(self._length, signal_information.signal_power)
         signal_information.update_noise_power(noise_power)

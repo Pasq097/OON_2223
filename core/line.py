@@ -1,3 +1,4 @@
+import numpy as np
 
 
 class Line:
@@ -6,8 +7,9 @@ class Line:
     def __init__(self, label, length):  # Constructor
         self._label = label
         self._length = length
-        self._state = 1
-        self._successive = {}
+        self._state = np.ones(10, dtype=int)  # self._state = ["channel x Hz is free/occupied", x10]
+        self._successive = {}  # each signal when start propagating needs to stay on the same channel
+        # 'till the destination
 
     @property  # Getter
     def label(self):
@@ -57,6 +59,9 @@ class Line:
         # if I'm on a line e.g. AB I can only go on a successive node e.g. B it's simpler thant node propagate method
         # it has to update latency and noise_power
 
+        for temp in self._state:
+            print(temp)
+
         for node in self._successive:
             self._successive[node].propagate(signal_information)
 
@@ -66,3 +71,9 @@ class Line:
         signal_information.update_noise_power(noise_power)
         latency = self.latency_generation(self._length)
         signal_information.update_latency(latency)
+
+        # we need to modify the method propagate as that it will propagate the signal on a free channel ???
+        # we need to check if the channel is free, where?
+
+# l = Line(1,['AB'])
+# print(l._state)

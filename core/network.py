@@ -9,6 +9,7 @@ import math
 import Signal_Information
 from core import PROVA_DFS
 import Cheking_lines
+import Checking_ch
 
 
 class Network:
@@ -17,6 +18,7 @@ class Network:
     def __init__(self):  # Constructor, has to read the given JSON file and create all instances of all nodes and lines
         self._nodes = {}  # il dizionario deve avere come chiave la label del nodo e come valore l'istanza del nodo
         self._lines = {}  # il dizionario ha come key il nome della linea AB,BF etc e come value l'istanza della linea
+        self._route_space = None
         self._df = None
         with open('nodes.json', 'r') as file:
             self._dictionary = json.load(file)
@@ -67,6 +69,10 @@ class Network:
     @property
     def df(self):
         return self._df
+
+    @property
+    def route_space(self):
+        return self._route_space
 
     def draw(self):
         x_values = []
@@ -159,6 +165,8 @@ class Network:
         self._df = self._df.transpose()
         print(self._df)
 
+
+
     def propagate(self, signal_information):
         # has to propagate the signal_information through the specified path
         # return the modified spectral_information's
@@ -221,16 +229,25 @@ class Network:
             possible_paths_sorted.append(temporary)
         return possible_paths_sorted  # it returns all possible paths sorted from fastest to slower
 
-    def stream(self, list_of_connections, selection='latency'):
+    def stream(self, list_of_connections, selection='snr'):
+        # Route space has to be a pandas dataframe that for all the possible paths describe the availability for each CH
+        #         1    2    3     4     5  ... 10
+        # A->B    0    0    1     0     1  ... 1
+        # B->C    1    0    0     1     0  ... 0
+        # ....   ...  ...  ...   ...   ... ... ...
+        # How to find out if the CH of a specific path is free or not?
+        # Note that one signal from root->target need to be transmitted on the same CH for each line
+
         if selection == 'latency':
             for temp in list_of_connections:
                 possible_paths = self.find_best_latency(temp.input, temp.output)
                 # print(possible_paths)
                 k = 0
-                for temporary in possible_paths:
+                for temporary in possible_paths:              # for the first(and going on) has to check CH1(AND ON)
                     # print(temporary)
-                    flag_is = Cheking_lines.check_the_lines(temporary, self._lines)
+                    #flag_is = Cheking_lines.check_the_lines(temporary, self._lines)
                     # print(flag_is)
+                    flag_is = Checking_ch.checkig_ch(temporary, self._lines)
                     if flag_is == 1:
                         the_path_is = temporary
                         # print(the_path_is)
@@ -268,7 +285,16 @@ class Network:
                 k = 0
                 for temporary in possible_paths:
                     # print(temporary)
-                    flag_is = Cheking_lines.check_the_lines(temporary, self._lines)
+                    # extract all the lines of the path and then check each CH
+                    possible_lines = [''.join(pair) for pair in zip(temporary[:-1], temporary[1:])]
+                    # IDEA -> create a dynamic dictionary like this DICT = {'LINELABEL': CHANNEL.STATES,.....}
+                    # after is possible to check each values in the lines of the path to check for each line the same CH
+                    for temp2 in possible_lines:
+                        x = self._lines[temp2].state
+                        dict_for_ch = dict(zip(temp2, x))
+
+                    flag_is = Cheking_lines.check_the_lines(dict_for_ch)
+
                     # print(flag_is)
                     if flag_is == 1:
                         the_path_is = temporary
@@ -297,3 +323,58 @@ class Network:
                 elif k >= len(possible_paths):
                     temp.snr = 0
                     temp.latency = None
+
+    def probe(self):
+        # need to create two dataframe one for latency and one for SNR
+        for key in self._nodes:  # it gives the list of the letter A, B ,C....
+            for temp in self._nodes[key].connected_nodes:  # it gives the connected nodes of the specific object node
+                self._nodes[key].successive[key + temp] = self._lines[key + temp]
+            # need to call line and create successive as dictionary {line : "node connected to the line"}
+        for key in self._lines:
+            self._lines[key].successive[key] = self._nodes[key[1]]
+            # dataframe creation
+        nodes_in_network = list(self.dictionary.keys())
+        com = itertools.permutations(nodes_in_network, 2)
+
+        res = []
+        all_possible_paths = []
+        paths = []
+        for val in com:
+            paths.append(self.find_all_paths(val[0], val[1]))
+
+        for temp in paths:
+            for temporary in temp:
+                all_possible_paths.append(temporary)
+
+        for paths in all_possible_paths:
+            res.append('->'.join(paths))
+
+        # find the total accumulated latency
+        # self.connect()
+        total_accumulated_latency = []
+        total_accumulated_noise = []
+        signal_to_noise_ratio = []
+        for temp in all_possible_paths:
+            s1 = Signal_Information.SignalInformation(1 * 10 ** -3, temp)
+            self.propagate(s1)
+            total_accumulated_latency.append(s1.latency)
+            total_accumulated_noise.append(s1.noise_power)
+            x = math.log10(s1.signal_power / s1.noise_power)
+            y = 10 * x
+            signal_to_noise_ratio.append(y)
+        dict_01 = {}
+        for i in range(0, 10):
+            dict_01[i+1] = total_accumulated_latency
+        df_latency = pd.DataFrame(dict_01, index=res)
+        print(df_latency)
+
+        dict_02 = {}
+        for i in range(0, 10):
+            dict_02[i+1] = signal_to_noise_ratio
+        df_snr = pd.DataFrame(dict_02, index=res)
+        print(df_snr)
+
+
+
+net1 = Network()
+net1.probe()

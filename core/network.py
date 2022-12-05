@@ -10,6 +10,7 @@ import Signal_Information
 from core import PROVA_DFS
 import Cheking_lines
 import Checking_ch
+import LightPath
 
 
 class Network:
@@ -165,6 +166,13 @@ class Network:
         self._df = self._df.transpose()
         print(self._df)
 
+        dict_03 = {}
+        for i in range(0, 10):
+            dict_03[i] = 1
+        self._route_space = pd.DataFrame(dict_03, index=res)
+        print(self._route_space)
+
+
 
 
     def propagate(self, signal_information):
@@ -241,48 +249,8 @@ class Network:
         if selection == 'latency':
             for temp in list_of_connections:
                 possible_paths = self.find_best_latency(temp.input, temp.output)
-                # print(possible_paths)
                 k = 0
-                for temporary in possible_paths:              # for the first(and going on) has to check CH1(AND ON)
-                    # print(temporary)
-                    #flag_is = Cheking_lines.check_the_lines(temporary, self._lines)
-                    # print(flag_is)
-                    flag_is = Checking_ch.checkig_ch(temporary, self._lines)
-                    if flag_is == 1:
-                        the_path_is = temporary
-                        # print(the_path_is)
-                        break
-                    else:
-                        k = k + 1
-                # print("the path choosen is " +the_path_is)
-                # print(k)
-
-                if k < len(possible_paths):
-                    signal_power = temp.signal_power
-                    signal = Signal_Information.SignalInformation(signal_power, the_path_is)
-                    self.propagate(signal)
-
-                    lines_to_use = [''.join(pair) for pair in zip(the_path_is[:-1], the_path_is[1:])]
-
-                    for temp5 in lines_to_use:
-                        # print("the line to put at zero is " + temp5)
-                        self._lines[temp5].state = 0
-                        #  print(self._lines[temp5].state)
-                        # print(x)
-                        # print(self._lines[x].state)
-
-                    x = math.log10(signal.signal_power / signal.noise_power)
-                    y = 10 * x
-                    temp.snr = y
-                    temp.latency = signal.latency
-                elif k >= len(possible_paths):
-                    temp.snr = 0
-                    temp.latency = None
-        elif selection == 'snr':
-            for temp in list_of_connections:
-                possible_paths = self.find_best_snr(temp.input, temp.output)
-                # print(possible_paths)
-                k = 0
+                dict_for_ch = {}
                 for temporary in possible_paths:
                     # print(temporary)
                     # extract all the lines of the path and then check each CH
@@ -290,36 +258,90 @@ class Network:
                     # IDEA -> create a dynamic dictionary like this DICT = {'LINELABEL': CHANNEL.STATES,.....}
                     # after is possible to check each values in the lines of the path to check for each line the same CH
                     for temp2 in possible_lines:
-                        x = self._lines[temp2].state
-                        dict_for_ch = dict(zip(temp2, x))
-
-                    flag_is = Cheking_lines.check_the_lines(dict_for_ch)
-
-                    # print(flag_is)
-                    if flag_is == 1:
+                        dict_for_ch[temp2] = self._lines[temp2].state
+                    flag_is = Checking_ch.checking_ch(dict_for_ch)  # in flag_is is stored if there is CH free
+                    # and which one is it, the index
+                    if flag_is[0] == 1:
                         the_path_is = temporary
-                        # print(the_path_is)
+                        the_ch_is = flag_is[1]
                         break
                     else:
                         k = k + 1
-                # print("the path choosen is " +the_path_is)
-                # print(k)
-
                 if k < len(possible_paths):
                     signal_power = temp.signal_power
-                    signal = Signal_Information.SignalInformation(signal_power, the_path_is)
-                    self.propagate(signal)
+                    # signal = Signal_Information.SignalInformation(signal_power, the_path_is)
+                    light_path = LightPath.LightPath(signal_power, the_path_is, the_ch_is)
+                    self.propagate(light_path)
                     lines_to_use = [''.join(pair) for pair in zip(the_path_is[:-1], the_path_is[1:])]
                     for temp5 in lines_to_use:
-                        # print("the line to put at zero is " + temp5)
-                        self._lines[temp5].state = 0
-                        # print(self._lines[temp5].state)
-                        # print(x)
-                        # print(self._lines[x].state)
-                    x = math.log10(signal.signal_power / signal.noise_power)
+                        self._lines[temp5].state[the_ch_is] = 0
+                        res = list(self._route_space.index)
+                        index = ""
+                        for l in range(0, len(the_path_is)):
+                            if l == 0:
+                                index = index + the_path_is[l]
+                            else:
+                                index = index + '->' + the_path_is[l]
+
+                            for a in res:
+                                if index in a:
+                                    pd.set_option('display.max_rows', None)
+                                    self._route_space.loc[a, the_ch_is] = 0
+
+                    x = math.log10(light_path.signal_power / light_path.noise_power)
                     y = 10 * x
                     temp.snr = y
-                    temp.latency = signal.latency
+                    temp.latency = light_path.latency
+                elif k >= len(possible_paths):
+                    temp.snr = 0
+                    temp.latency = None
+
+        elif selection == 'snr':
+            for temp in list_of_connections:
+                possible_paths = self.find_best_snr(temp.input, temp.output)
+                k = 0
+                dict_for_ch = {}
+                for temporary in possible_paths:
+                    # print(temporary)
+                    # extract all the lines of the path and then check each CH
+                    possible_lines = [''.join(pair) for pair in zip(temporary[:-1], temporary[1:])]
+                    # IDEA -> create a dynamic dictionary like this DICT = {'LINELABEL': CHANNEL.STATES,.....}
+                    # after is possible to check each values in the lines of the path to check for each line the same CH
+                    for temp2 in possible_lines:
+                        dict_for_ch[temp2] = self._lines[temp2].state
+                    flag_is = Checking_ch.checking_ch(dict_for_ch)      # in flag_is is stored if there is CH free
+                                                                        # and which one is it, the index
+                    if flag_is[0] == 1:
+                        the_path_is = temporary
+                        the_ch_is = flag_is[1]
+                        break
+                    else:
+                        k = k + 1
+                if k < len(possible_paths):
+                    signal_power = temp.signal_power
+                    # signal = Signal_Information.SignalInformation(signal_power, the_path_is)
+                    light_path = LightPath.LightPath(signal_power, the_path_is, the_ch_is)
+                    self.propagate(light_path)
+                    lines_to_use = [''.join(pair) for pair in zip(the_path_is[:-1], the_path_is[1:])]
+                    for temp5 in lines_to_use:
+                        self._lines[temp5].state[the_ch_is] = 0
+                        res = list(self._route_space.index)
+                        index = ""
+                        for l in range(0, len(the_path_is)):
+                            if l == 0:
+                                index = index + the_path_is[l]
+                            else:
+                                index = index + '->' + the_path_is[l]
+
+                            for a in res:
+                                if index in a:
+                                    pd.set_option('display.max_rows', None)
+                                    self._route_space.loc[a, the_ch_is] = 0
+
+                    x = math.log10(light_path.signal_power / light_path.noise_power)
+                    y = 10 * x
+                    temp.snr = y
+                    temp.latency = light_path.latency
                 elif k >= len(possible_paths):
                     temp.snr = 0
                     temp.latency = None
@@ -374,7 +396,6 @@ class Network:
         df_snr = pd.DataFrame(dict_02, index=res)
         print(df_snr)
 
-
-
-net1 = Network()
-net1.probe()
+#net1 = Network()
+#net1.connect()
+#net1.probe()

@@ -7,7 +7,7 @@ class Line:
     def __init__(self, label, length):  # Constructor
         self._label = label
         self._length = length
-        self._state = np.ones(10, dtype=int)  # self._state = ["channel x Hz is free/occupied", x10]
+        self._state = [1, 1, 1, 1, 1, 1, 1, 1, 1, 1]#np.ones(10, dtype=int)  # self._state = ["channel x Hz is free/occupied", x10]
         self._successive = {}  # each signal when start propagating needs to stay on the same channel
         # 'till the destination
 
@@ -59,8 +59,8 @@ class Line:
         # if I'm on a line e.g. AB I can only go on a successive node e.g. B it's simpler thant node propagate method
         # it has to update latency and noise_power
 
-        for temp in self._state:
-            print(temp)
+        #for temp in self._state:
+            #print(temp)
 
         for node in self._successive:
             self._successive[node].propagate(signal_information)

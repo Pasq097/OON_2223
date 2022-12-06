@@ -3,8 +3,8 @@ import network
 import random
 import connection
 import matplotlib.pyplot as plt
-import pandas as pd
-N_CONNECTIONS = 100
+
+N_CONNECTIONS = 60
 weighted_paths = network.Network()
 weighted_paths.connect()
 weighted_paths.draw()
@@ -14,15 +14,15 @@ list_of_nodes = []
 connections = []
 for keys in weighted_paths.dictionary:
     list_of_nodes.append(keys)
-    #special = ['A', 'B']
+    # special = ['A', 'B']
 
 for k in range(N_CONNECTIONS):
     inp, out = random.sample(list_of_nodes, 2)  # this should take two unique elements from the list
-    #print("this is destination:" + inp + out)
+    # print("this is destination:" + inp + out)
     connections.append(connection.Connection(inp, out, 1e-3))
 sel = 'latency'
 weighted_paths.stream(connections, sel)
-#print(len(connections))
+# print(len(connections))
 if sel == 'snr':
     list_of_snr = []
     for temp2 in connections:
@@ -31,6 +31,8 @@ if sel == 'snr':
     res = list(filter(lambda item: item != 0, list_of_snr))
     # print(res)
     # print(len(res))
+
+    weighted_paths.probe()
 
     print(weighted_paths.route_space)
     plt.xlabel('SNR [dB]', fontweight='bold')
@@ -46,7 +48,9 @@ else:
         # print(temp.latency)
     res = list(filter(lambda item: item is not None, list_of_latency))
     # print(len(res))
-    print(weighted_paths.route_space)
+    a = weighted_paths.probe()
+    b = weighted_paths.route_space
+    print(b)
     plt.xlabel('latency', fontweight='bold')
     plt.ylabel('occurrences', fontweight='bold')
     plt.title("Latency distribution")

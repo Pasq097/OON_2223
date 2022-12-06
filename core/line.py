@@ -7,7 +7,7 @@ class Line:
     def __init__(self, label, length):  # Constructor
         self._label = label
         self._length = length
-        self._state = [1, 1, 1, 1, 1, 1, 1, 1, 1, 1]#np.ones(10, dtype=int)  # self._state = ["channel x Hz is free/occupied", x10]
+        self._state = [1, 1, 1, 1, 1, 1, 1, 1, 1, 1] #np.ones(10, dtype=int)  # self._state = ["channel x Hz is free/occupied", x10]
         self._successive = {}  # each signal when start propagating needs to stay on the same channel
         # 'till the destination
 

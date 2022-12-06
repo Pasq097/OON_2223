@@ -127,6 +127,28 @@ class Network:
         # need to call line and create successive as dictionary {line : "node connected to the line"}
         for key in self._lines:
             self._lines[key].successive[key] = self._nodes[key[1]]
+
+        # creation of the switching matrix for each node
+        # dictA{ 'B' : { 'B': [0*10], 'C':[CHs], 'D':[CHs] }, 'C' : {...}...
+        dict_of_node = {}
+
+        for key in self._nodes:
+            print(key)
+            con_nod = []
+            for temp in self._nodes[key].connected_nodes:
+                con_nod.append(temp)
+
+            x = np.ones(10, dtype=int)
+            dict_of_node = {ver: {col: x for col in con_nod} for ver in con_nod}
+
+            for i in dict_of_node:
+                for j in dict_of_node[i]:
+                    if i == j:
+                        dict_of_node[i][j] = np.zeros(10, dtype=int)
+            print(dict_of_node)
+            self._nodes[key].switching_matrix = dict_of_node
+        # block = current_switching_matrix['A']['B']
+        # print(block)
         # dataframe creation
         nodes_in_network = list(self.dictionary.keys())
         com = itertools.permutations(nodes_in_network, 2)
@@ -171,9 +193,6 @@ class Network:
             dict_03[i] = 1
         self._route_space = pd.DataFrame(dict_03, index=res)
         print(self._route_space)
-
-
-
 
     def propagate(self, signal_information):
         # has to propagate the signal_information through the specified path
@@ -309,8 +328,8 @@ class Network:
                     # after is possible to check each values in the lines of the path to check for each line the same CH
                     for temp2 in possible_lines:
                         dict_for_ch[temp2] = self._lines[temp2].state
-                    flag_is = Checking_ch.checking_ch(dict_for_ch)      # in flag_is is stored if there is CH free
-                                                                        # and which one is it, the index
+                    flag_is = Checking_ch.checking_ch(dict_for_ch)  # in flag_is is stored if there is CH free
+                    # and which one is it, the index
                     if flag_is[0] == 1:
                         the_path_is = temporary
                         the_ch_is = flag_is[1]
@@ -346,7 +365,7 @@ class Network:
                     temp.snr = 0
                     temp.latency = None
 
-    def probe(self):
+    def probe(self, sel='latency'):
         # need to create two dataframe one for latency and one for SNR
         for key in self._nodes:  # it gives the list of the letter A, B ,C....
             for temp in self._nodes[key].connected_nodes:  # it gives the connected nodes of the specific object node
@@ -385,17 +404,20 @@ class Network:
             y = 10 * x
             signal_to_noise_ratio.append(y)
         dict_01 = {}
-        for i in range(0, 10):
-            dict_01[i+1] = total_accumulated_latency
-        df_latency = pd.DataFrame(dict_01, index=res)
-        print(df_latency)
+        if sel == 'latency':
+            for i in range(0, 10):
+                dict_01[i + 1] = total_accumulated_latency
+            df_latency = pd.DataFrame(dict_01, index=res)
+            print(df_latency)
+        elif sel == 'snr':
+            dict_02 = {}
+            for i in range(0, 10):
+                dict_02[i + 1] = signal_to_noise_ratio
+            df_snr = pd.DataFrame(dict_02, index=res)
+            print(df_snr)
 
-        dict_02 = {}
-        for i in range(0, 10):
-            dict_02[i+1] = signal_to_noise_ratio
-        df_snr = pd.DataFrame(dict_02, index=res)
-        print(df_snr)
 
-#net1 = Network()
-#net1.connect()
-#net1.probe()
+net1 = Network()
+a = net1.connect()
+
+# net1.probe()

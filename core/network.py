@@ -133,7 +133,7 @@ class Network:
         dict_of_node = {}
 
         for key in self._nodes:
-            print(key)
+            #print(key)
             con_nod = []
             for temp in self._nodes[key].connected_nodes:
                 con_nod.append(temp)
@@ -145,8 +145,10 @@ class Network:
                 for j in dict_of_node[i]:
                     if i == j:
                         dict_of_node[i][j] = np.zeros(10, dtype=int)
-            print(dict_of_node)
+            #print(dict_of_node)
             self._nodes[key].switching_matrix = dict_of_node
+        #block = self._nodes['A'].switching_matrix['C']['B']
+        #print(block)
         # block = current_switching_matrix['A']['B']
         # print(block)
         # dataframe creation
@@ -295,17 +297,13 @@ class Network:
                     for temp5 in lines_to_use:
                         self._lines[temp5].state[the_ch_is] = 0
                         res = list(self._route_space.index)
-                        index = ""
-                        for l in range(0, len(the_path_is)):
-                            if l == 0:
-                                index = index + the_path_is[l]
-                            else:
-                                index = index + '->' + the_path_is[l]
-
-                            for a in res:
-                                if index in a:
-                                    pd.set_option('display.max_rows', None)
-                                    self._route_space.loc[a, the_ch_is] = 0
+                        index = ('->'.join(the_path_is))
+                        # print('ciao'+index)
+                        for a in res:
+                            # print(a)
+                            if index in a:
+                                pd.set_option('display.max_rows', None)
+                                self._route_space.loc[a, the_ch_is] = 0
 
                     x = math.log10(light_path.signal_power / light_path.noise_power)
                     y = 10 * x
@@ -318,6 +316,7 @@ class Network:
         elif selection == 'snr':
             for temp in list_of_connections:
                 possible_paths = self.find_best_snr(temp.input, temp.output)
+                #print(possible_paths)
                 k = 0
                 dict_for_ch = {}
                 for temporary in possible_paths:
@@ -338,24 +337,45 @@ class Network:
                         k = k + 1
                 if k < len(possible_paths):
                     signal_power = temp.signal_power
+                    print(the_path_is)
                     # signal = Signal_Information.SignalInformation(signal_power, the_path_is)
                     light_path = LightPath.LightPath(signal_power, the_path_is, the_ch_is)
                     self.propagate(light_path)
                     lines_to_use = [''.join(pair) for pair in zip(the_path_is[:-1], the_path_is[1:])]
                     for temp5 in lines_to_use:
+
                         self._lines[temp5].state[the_ch_is] = 0
                         res = list(self._route_space.index)
-                        index = ""
-                        for l in range(0, len(the_path_is)):
-                            if l == 0:
-                                index = index + the_path_is[l]
-                            else:
-                                index = index + '->' + the_path_is[l]
 
-                            for a in res:
-                                if index in a:
-                                    pd.set_option('display.max_rows', None)
-                                    self._route_space.loc[a, the_ch_is] = 0
+
+                        index = ('->'.join(the_path_is))
+                        #print('ciao'+index)
+
+                        for a in res:
+                            #print(a)
+                            if index in a:
+                                pd.set_option('display.max_rows', None)
+                                self._route_space.loc[a, the_ch_is] = 0
+                    # update the route_space by using the switching matrix
+                    # for each path the multiplication between all the state lines arrays and swm
+                    # we have to exclude the swm of the first and last node of the path
+                    #for node_swm in the_path_is:
+                    #print(the_path_is)
+                    #nodes_for_swm = the_path_is.lstrip(the_path_is[0]).rstrip(the_path_is[-1])
+                    #print(nodes_for_swm)
+                    #for node_swm in nodes_for_swm:
+                        #swm = self._nodes[node_swm].switching_matrix
+                        #print(swm)
+                        #block = self._nodes[node_swm].switching_matrix[the_path_is[0]][the_path_is[-1]]
+                        #print(block)
+                        #for temporary in lines_to_use:
+                            #x = self._lines[temporary].state
+                            #print(x)
+                            #multiply = block * x
+                            #print(multiply)
+                            
+
+
 
                     x = math.log10(light_path.signal_power / light_path.noise_power)
                     y = 10 * x

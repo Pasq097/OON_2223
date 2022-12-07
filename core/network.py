@@ -278,6 +278,7 @@ class Network:
                     possible_lines = [''.join(pair) for pair in zip(temporary[:-1], temporary[1:])]
                     # IDEA -> create a dynamic dictionary like this DICT = {'LINELABEL': CHANNEL.STATES,.....}
                     # after is possible to check each values in the lines of the path to check for each line the same CH
+                    dict_for_ch = {}
                     for temp2 in possible_lines:
                         dict_for_ch[temp2] = self._lines[temp2].state
                     flag_is = Checking_ch.checking_ch(dict_for_ch)  # in flag_is is stored if there is CH free
@@ -290,6 +291,7 @@ class Network:
                         k = k + 1
                 if k < len(possible_paths):
                     signal_power = temp.signal_power
+                    #print(the_path_is)
                     # signal = Signal_Information.SignalInformation(signal_power, the_path_is)
                     light_path = LightPath.LightPath(signal_power, the_path_is, the_ch_is)
                     self.propagate(light_path)
@@ -320,24 +322,30 @@ class Network:
                 k = 0
                 dict_for_ch = {}
                 for temporary in possible_paths:
-                    # print(temporary)
+
                     # extract all the lines of the path and then check each CH
                     possible_lines = [''.join(pair) for pair in zip(temporary[:-1], temporary[1:])]
                     # IDEA -> create a dynamic dictionary like this DICT = {'LINELABEL': CHANNEL.STATES,.....}
                     # after is possible to check each values in the lines of the path to check for each line the same CH
+                    dict_for_ch = {}
                     for temp2 in possible_lines:
+
+                        #print(temp2)
                         dict_for_ch[temp2] = self._lines[temp2].state
+                    #print(dict_for_ch)
                     flag_is = Checking_ch.checking_ch(dict_for_ch)  # in flag_is is stored if there is CH free
                     # and which one is it, the index
                     if flag_is[0] == 1:
+                        #print(temporary)
                         the_path_is = temporary
                         the_ch_is = flag_is[1]
                         break
                     else:
                         k = k + 1
+
                 if k < len(possible_paths):
                     signal_power = temp.signal_power
-                    print(the_path_is)
+                    #print(the_path_is)
                     # signal = Signal_Information.SignalInformation(signal_power, the_path_is)
                     light_path = LightPath.LightPath(signal_power, the_path_is, the_ch_is)
                     self.propagate(light_path)

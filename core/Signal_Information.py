@@ -56,5 +56,3 @@ class SignalInformation:
     def update_path(self):
         array = self._path[1:]
         self._path = array
-
-

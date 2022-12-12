@@ -8,7 +8,6 @@ import itertools
 import math
 import Signal_Information
 from core import PROVA_DFS
-import Cheking_lines
 import Checking_ch
 import LightPath
 
@@ -133,7 +132,7 @@ class Network:
         dict_of_node = {}
 
         for key in self._nodes:
-            #print(key)
+            # print(key)
             con_nod = []
             for temp in self._nodes[key].connected_nodes:
                 con_nod.append(temp)
@@ -145,10 +144,10 @@ class Network:
                 for j in dict_of_node[i]:
                     if i == j:
                         dict_of_node[i][j] = np.zeros(10, dtype=int)
-            #print(dict_of_node)
+            # print(dict_of_node)
             self._nodes[key].switching_matrix = dict_of_node
-        #block = self._nodes['A'].switching_matrix['C']['B']
-        #print(block)
+        # block = self._nodes['A'].switching_matrix['C']['B']
+        # print(block)
         # block = current_switching_matrix['A']['B']
         # print(block)
         # dataframe creation
@@ -291,7 +290,7 @@ class Network:
                         k = k + 1
                 if k < len(possible_paths):
                     signal_power = temp.signal_power
-                    #print(the_path_is)
+
                     # signal = Signal_Information.SignalInformation(signal_power, the_path_is)
                     light_path = LightPath.LightPath(signal_power, the_path_is, the_ch_is)
                     self.propagate(light_path)
@@ -318,7 +317,7 @@ class Network:
         elif selection == 'snr':
             for temp in list_of_connections:
                 possible_paths = self.find_best_snr(temp.input, temp.output)
-                #print(possible_paths)
+                # print(possible_paths)
                 k = 0
                 dict_for_ch = {}
                 for temporary in possible_paths:
@@ -329,14 +328,13 @@ class Network:
                     # after is possible to check each values in the lines of the path to check for each line the same CH
                     dict_for_ch = {}
                     for temp2 in possible_lines:
-
-                        #print(temp2)
+                        # print(temp2)
                         dict_for_ch[temp2] = self._lines[temp2].state
-                    #print(dict_for_ch)
+                    # print(dict_for_ch)
                     flag_is = Checking_ch.checking_ch(dict_for_ch)  # in flag_is is stored if there is CH free
                     # and which one is it, the index
                     if flag_is[0] == 1:
-                        #print(temporary)
+                        # print(temporary)
                         the_path_is = temporary
                         the_ch_is = flag_is[1]
                         break
@@ -345,45 +343,48 @@ class Network:
 
                 if k < len(possible_paths):
                     signal_power = temp.signal_power
-                    #print(the_path_is)
+                    # print(the_path_is)
                     # signal = Signal_Information.SignalInformation(signal_power, the_path_is)
                     light_path = LightPath.LightPath(signal_power, the_path_is, the_ch_is)
+                    print(the_path_is)
+                    # print(the_ch_is)
                     self.propagate(light_path)
                     lines_to_use = [''.join(pair) for pair in zip(the_path_is[:-1], the_path_is[1:])]
+                    #print(lines_to_use)
                     for temp5 in lines_to_use:
-
                         self._lines[temp5].state[the_ch_is] = 0
-                        res = list(self._route_space.index)
-
-
-                        index = ('->'.join(the_path_is))
-                        #print('ciao'+index)
-
-                        for a in res:
-                            #print(a)
-                            if index in a:
+                    res = list(self._route_space.index)
+                    index_l = []
+                    for x in lines_to_use:
+                        index = ('->'.join(x))
+                        index_l.append(index)
+                    print(index_l)
+                    for a in res:
+                        #print(a)
+                        for ind in index_l:
+                            if ind in a:
                                 pd.set_option('display.max_rows', None)
                                 self._route_space.loc[a, the_ch_is] = 0
-                    # update the route_space by using the switching matrix
+                                #self._route_space.loc['A->B'] = [1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
+
+
+                        # update the route_space by using the switching matrix
                     # for each path the multiplication between all the state lines arrays and swm
                     # we have to exclude the swm of the first and last node of the path
-                    #for node_swm in the_path_is:
-                    #print(the_path_is)
-                    #nodes_for_swm = the_path_is.lstrip(the_path_is[0]).rstrip(the_path_is[-1])
-                    #print(nodes_for_swm)
-                    #for node_swm in nodes_for_swm:
-                        #swm = self._nodes[node_swm].switching_matrix
-                        #print(swm)
-                        #block = self._nodes[node_swm].switching_matrix[the_path_is[0]][the_path_is[-1]]
-                        #print(block)
-                        #for temporary in lines_to_use:
-                            #x = self._lines[temporary].state
-                            #print(x)
-                            #multiply = block * x
-                            #print(multiply)
-                            
-
-
+                    # for node_swm in the_path_is:
+                    # print(the_path_is)
+                    # nodes_for_swm = the_path_is.lstrip(the_path_is[0]).rstrip(the_path_is[-1])
+                    # print(nodes_for_swm)
+                    # for node_swm in nodes_for_swm:
+                    # swm = self._nodes[node_swm].switching_matrix
+                    # print(swm)
+                    # block = self._nodes[node_swm].switching_matrix[the_path_is[0]][the_path_is[-1]]
+                    # print(block)
+                    # for temporary in lines_to_use:
+                    # x = self._lines[temporary].state
+                    # print(x)
+                    # multiply = block * x
+                    # print(multiply)
 
                     x = math.log10(light_path.signal_power / light_path.noise_power)
                     y = 10 * x
@@ -392,6 +393,18 @@ class Network:
                 elif k >= len(possible_paths):
                     temp.snr = 0
                     temp.latency = None
+
+
+            x = self._lines['AB'].state
+            y = self._lines['BD'].state
+            #k = self._lines['DF'].state
+            #p = self._lines['FE'].state
+            #z = self._nodes['B'].switching_matrix['A']['C']
+            result = x*y
+            print('this')
+            print(result)
+            print(self._route_space.loc['A->B->D'])
+
 
     def probe(self, sel='latency'):
         # need to create two dataframe one for latency and one for SNR
@@ -444,8 +457,3 @@ class Network:
             df_snr = pd.DataFrame(dict_02, index=res)
             print(df_snr)
 
-
-net1 = Network()
-a = net1.connect()
-
-# net1.probe()

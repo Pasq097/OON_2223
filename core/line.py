@@ -1,4 +1,5 @@
 import numpy as np
+import LightPath
 
 
 class Line:
@@ -7,7 +8,7 @@ class Line:
     def __init__(self, label, length):  # Constructor
         self._label = label
         self._length = length
-        self._state = [1, 1, 1, 1, 1, 1, 1, 1, 1, 1] #np.ones(10, dtype=int)  # self._state = ["channel x Hz is free/occupied", x10]
+        self._state = np.ones(10, dtype=int)  # self._state = ["channel x Hz is free/occupied", x10]
         self._successive = {}  # each signal when start propagating needs to stay on the same channel
         # 'till the destination
 
@@ -58,13 +59,12 @@ class Line:
     def propagate(self, signal_information):
         # if I'm on a line e.g. AB I can only go on a successive node e.g. B it's simpler thant node propagate method
         # it has to update latency and noise_power
-
-        #for temp in self._state:
-            #print(temp)
-
+        # for temp in self._state:
+        # print(temp)
+        # ch = signal_information.light_path
+        # self.state[ch] = 0
         for node in self._successive:
             self._successive[node].propagate(signal_information)
-
         # self._state = 0
         # we have to "feed" the method the length of the current line
         noise_power = self.noise_generation(self._length, signal_information.signal_power)
@@ -74,6 +74,3 @@ class Line:
 
         # we need to modify the method propagate as that it will propagate the signal on a free channel ???
         # we need to check if the channel is free, where?
-
-# l = Line(1,['AB'])
-# print(l._state)

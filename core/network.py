@@ -346,29 +346,74 @@ class Network:
                     # print(the_path_is)
                     # signal = Signal_Information.SignalInformation(signal_power, the_path_is)
                     light_path = LightPath.LightPath(signal_power, the_path_is, the_ch_is)
-                    print(the_path_is)
+                    #print(the_path_is)
                     # print(the_ch_is)
                     self.propagate(light_path)
                     lines_to_use = [''.join(pair) for pair in zip(the_path_is[:-1], the_path_is[1:])]
                     #print(lines_to_use)
+                    h = []
                     for temp5 in lines_to_use:
                         self._lines[temp5].state[the_ch_is] = 0
+                        h.append(self._lines[temp5].state)
                     res = list(self._route_space.index)
                     index_l = []
+                    #print(h)
+                    result = np.ones(10, dtype=int)
+
+                    nodes_for_swm = the_path_is.lstrip(the_path_is[0]).rstrip(the_path_is[-1])
+                    blocks = []
+                    for n_swm in nodes_for_swm:
+                        #print(n_swm)
+                        index_swm = the_path_is.index(n_swm)
+                        blocks.append(self._nodes[n_swm].switching_matrix[the_path_is[index_swm-1]][the_path_is[index_swm+1]])
+                    #print(blocks)
+
+                    for arr in h:
+                        #print(arr)
+                        if len(blocks) != 0:
+                            for block in blocks:
+                                x = arr
+                                print(x)
+                                y = block
+                                print(y)
+                                result = result*x*y
+                        else:
+                            x = arr
+                            print(x)
+                            result = result * x
+
+                    #print('the result is' + str(result))
+
                     for x in lines_to_use:
                         index = ('->'.join(x))
                         index_l.append(index)
-                    print(index_l)
+                    #print(index_l)
+
+
+                    a_a = ('->'.join(the_path_is))
+                    #print('this is current path xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx ' + a_a)
+                    # self._route_space.loc[a_a] = result
+                    # for a in res:
+                    #     #print(a)
+                    #     for ind in index_l:
+                    #         if ind in a:
+                    #             #print('this is the path ' + a)
+                    #             #print('this is ind ' + ind)
+                    #             pd.set_option('display.max_rows', None)
+                    #             self._route_space.loc[a] = result
+
                     for a in res:
                         #print(a)
                         for ind in index_l:
                             if ind in a:
                                 pd.set_option('display.max_rows', None)
                                 self._route_space.loc[a, the_ch_is] = 0
-                                #self._route_space.loc['A->B'] = [1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
+                                #self._route_space.loc[a] = result
+                    self._route_space.loc[a_a] = result
 
 
-                        # update the route_space by using the switching matrix
+
+                    # update the route_space by using the switching matrix
                     # for each path the multiplication between all the state lines arrays and swm
                     # we have to exclude the swm of the first and last node of the path
                     # for node_swm in the_path_is:
@@ -399,11 +444,14 @@ class Network:
             y = self._lines['BD'].state
             #k = self._lines['DF'].state
             #p = self._lines['FE'].state
-            #z = self._nodes['B'].switching_matrix['A']['C']
-            result = x*y
+            z = self._nodes['B'].switching_matrix['A']['D']
+            #p = self._nodes['D'].switching_matrix['B']['F']
+            result = x*y*z
             print('this')
             print(result)
             print(self._route_space.loc['A->B->D'])
+
+
 
 
     def probe(self, sel='latency'):

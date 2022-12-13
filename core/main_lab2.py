@@ -4,7 +4,7 @@ import random
 import connection
 import matplotlib.pyplot as plt
 
-N_CONNECTIONS = 45
+N_CONNECTIONS = 47
 weighted_paths = network.Network()
 weighted_paths.connect()
 weighted_paths.draw()

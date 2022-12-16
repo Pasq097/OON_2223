@@ -4,7 +4,7 @@ import random
 import connection
 import matplotlib.pyplot as plt
 
-N_CONNECTIONS = 16
+N_CONNECTIONS = 85
 weighted_paths = network.Network()
 weighted_paths.connect()
 weighted_paths.draw()
@@ -14,14 +14,14 @@ list_of_nodes = []
 connections = []
 for keys in weighted_paths.dictionary:
     list_of_nodes.append(keys)
-    special = ['A', 'B']
+    #special = ['A', 'B']
 
 
 for k in range(N_CONNECTIONS):
-    inp, out = random.sample(special, 2)  # this should take two unique elements from the list
+    inp, out = random.sample(list_of_nodes, 2)  # this should take two unique elements from the list
     print("this is destination:" + inp + out)
     connections.append(connection.Connection(inp, out, 1e-3))
-sel = 'snr'
+sel = 'latency'
 weighted_paths.stream(connections, sel)
 # print(len(connections))
 if sel == 'snr':
@@ -49,6 +49,7 @@ else:
     # print(len(res))
     a = weighted_paths.probe()
     b = weighted_paths.route_space
+    weighted_paths.update_route_space()
     print(b)
     plt.xlabel('latency', fontweight='bold')
     plt.ylabel('occurrences', fontweight='bold')

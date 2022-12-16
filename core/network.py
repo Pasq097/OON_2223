@@ -55,6 +55,53 @@ class Network:
                 lines.append(line.Line(edge, var))
         self._lines = {k: v for k, v in zip(edge, lines)}
 
+        with open(r'C:\Users\Pac\OON_2223\resources\nodes_full.json') as file:
+            self._dictionary_2 = json.load(file)
+            k = 0
+            x_values = []
+            y_values = []
+            labels = list(self._dictionary_2.keys())
+            nodes = list(self._dictionary_2.keys())
+            for _ in self._dictionary_2.keys():
+                values = self._dictionary_2[nodes[k]]
+                nodes[k] = node.Node(nodes[k], values["position"], values["connected_nodes"])
+                k = k + 1
+        self._nodes = {k: v for k, v in zip(labels, nodes)}
+        obj = list(self._nodes.values())
+        edge = []
+
+        for nodo in self._nodes.keys():
+            for p in self._nodes[nodo].connected_nodes:
+                edge.append(nodo + p)
+
+        distances = []
+        temp = []
+        for nodo in self._nodes.values():
+            q = nodo.position
+            temp = nodo.connected_nodes
+            for temporary in range(0, len(temp)):
+                w = self._nodes[temp[temporary]].position
+                distance = ((q[0] - w[0]) ** 2 + (q[1] - w[1]) ** 2) ** 0.5
+                distances.append(distance)
+        lines = []
+        for _ in edge:
+            for var in distances:
+                lines.append(line.Line(edge, var))
+        self._lines = {k: v for k, v in zip(edge, lines)}
+
+        self._switching_matrices = {}
+
+        for key in self._dictionary_2:
+            a = self._dictionary_2[key]['switching_matrix']
+            self._switching_matrices[key] = a
+
+        #print(switching_matrices)
+        #print(len(switching_matrices))
+
+
+    @property
+    def dictionary_2(self):
+        return self._dictionary_2
 
     @property
     def dictionary(self):
@@ -148,6 +195,12 @@ class Network:
                         dict_of_node[i][j] = np.zeros(10, dtype=int)
             # print(dict_of_node)
             self._nodes[key].switching_matrix = dict_of_node
+
+        for key in self._dictionary_2:
+            print(key)
+            self._nodes[key].switching_matrix = self._switching_matrices[key]
+            print(self._switching_matrices[key])
+
         # block = self._nodes['A'].switching_matrix['C']['B']
         # print(block)
         # block = current_switching_matrix['A']['B']
@@ -405,4 +458,5 @@ class Network:
                 dict_02[i + 1] = signal_to_noise_ratio
             df_snr = pd.DataFrame(dict_02, index=res)
             print(df_snr)
+
 

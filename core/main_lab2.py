@@ -49,6 +49,7 @@ else:
     # print(len(res))
     a = weighted_paths.probe()
     b = weighted_paths.route_space
+
     weighted_paths.update_route_space()
     print(b)
     plt.xlabel('latency', fontweight='bold')

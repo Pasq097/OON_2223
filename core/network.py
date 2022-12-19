@@ -11,6 +11,7 @@ from core import PROVA_DFS
 import Checking_ch
 import LightPath
 import update_route
+import scipy.special as scipy
 
 
 class Network:
@@ -55,7 +56,7 @@ class Network:
                 lines.append(line.Line(edge, var))
         self._lines = {k: v for k, v in zip(edge, lines)}
 
-        with open(r'C:\Users\Pac\OON_2223\resources\nodes_not_full.json') as file:
+        with open(r'C:\Users\Pac\OON_2223\resources\nodes_full.json') as file:
             self._dictionary_2 = json.load(file)
             k = 0
             x_values = []
@@ -94,10 +95,6 @@ class Network:
         for key in self._dictionary_2:
             a = self._dictionary_2[key]['switching_matrix']
             self._switching_matrices[key] = a
-
-        #print(switching_matrices)
-        #print(len(switching_matrices))
-
 
     @property
     def dictionary_2(self):
@@ -162,7 +159,7 @@ class Network:
         paths = []
         for node in self._dictionary_2[start]["connected_nodes"]:
             if node not in path:
-                newpaths = PROVA_DFS.find_all_paths(self._dictionary, node, end, path)
+                newpaths = PROVA_DFS.find_all_paths(self._dictionary_2, node, end, path)
                 for newpath in newpaths:
                     paths.append(newpath)
         return paths
@@ -197,16 +194,14 @@ class Network:
             self._nodes[key].switching_matrix = dict_of_node
 
         for key in self._dictionary_2:
-            print(key)
             self._nodes[key].switching_matrix = self._switching_matrices[key]
-            print(self._switching_matrices[key])
 
         # block = self._nodes['A'].switching_matrix['C']['B']
         # print(block)
         # block = current_switching_matrix['A']['B']
         # print(block)
         # dataframe creation
-        nodes_in_network = list(self.dictionary.keys())
+        nodes_in_network = list(self._dictionary_2.keys())
         com = itertools.permutations(nodes_in_network, 2)
 
         res = []
@@ -312,6 +307,21 @@ class Network:
             possible_paths_sorted.append(temporary)
         return possible_paths_sorted  # it returns all possible paths sorted from fastest to slower
 
+    def calculate_bit_rate(self, strategy, GSNR):
+
+        if strategy == 'fixed_rate':
+            R_s = 32 * 10 ** 9  # GHz
+            B_n = 12.5 * 10 ** 9  # GHz
+            x = (R_s / B_n)
+            y = scipy.erfcinv(2 * 10 ** (-3))
+            z = 2 * y ** 2
+            tot = z * x
+            if GSNR >= tot:
+                R_b = 100  # Gbps
+            else:
+                R_b = 0
+        return R_b
+
     def stream(self, list_of_connections, selection='snr'):
         # Route space has to be a pandas dataframe that for all the possible paths describe the availability for each CH
         #         1    2    3     4     5  ... 10
@@ -334,7 +344,8 @@ class Network:
                     for temp2 in possible_lines:
                         dict_for_ch[temp2] = self._lines[temp2].state
                     nodes_for_swm = temporary.lstrip(temporary[0]).rstrip(temporary[-1])
-                    flag_is = Checking_ch.checking_ch(dict_for_ch, nodes_for_swm, self._nodes, temporary)  # in flag_is is stored if there is CH free
+                    flag_is = Checking_ch.checking_ch(dict_for_ch, nodes_for_swm, self._nodes,
+                                                      temporary)  # in flag_is is stored if there is CH free
                     # and which one is it, the index
                     if flag_is[0] == 1:
                         the_path_is = temporary
@@ -343,8 +354,8 @@ class Network:
                     else:
                         k = k + 1
                 if k < len(possible_paths):
-                    print('path' + the_path_is)
-                    print('ch'+str(the_ch_is))
+                    # print('path' + the_path_is)
+                    # print('ch'+str(the_ch_is))
                     signal_power = temp.signal_power
                     light_path = LightPath.LightPath(signal_power, the_path_is, the_ch_is)
                     self.propagate(light_path)
@@ -355,17 +366,18 @@ class Network:
                     nodes_for_swm = the_path_is.lstrip(the_path_is[0]).rstrip(the_path_is[-1])
                     for n_swm in nodes_for_swm:
                         index_swm = the_path_is.index(n_swm)
-                        block = (self._nodes[n_swm].switching_matrix[the_path_is[index_swm - 1]][the_path_is[index_swm + 1]])
-                        print('the block is' + str(block))
+                        block = (
+                            self._nodes[n_swm].switching_matrix[the_path_is[index_swm - 1]][the_path_is[index_swm + 1]])
+                        # print('the block is' + str(block))
+                        block[the_ch_is] = 0
                         if the_ch_is == 0:
-                            block[the_ch_is+1] = 0
+                            block[the_ch_is + 1] = 0
                         elif the_ch_is == 9:
                             block[the_ch_is - 1] = 0
                         else:
                             block[the_ch_is + 1] = 0
-                            block[the_ch_is-1] = 0
-                        print(block)
-
+                            block[the_ch_is - 1] = 0
+                        # print(block)
 
                     x = math.log10(light_path.signal_power / light_path.noise_power)
                     y = 10 * x
@@ -382,14 +394,16 @@ class Network:
                 k = 0
                 dict_for_ch = {}
                 for temporary in possible_paths:
-                    # extract all the lines of the path and then check each CH
+                    k = 0
                     possible_lines = [''.join(pair) for pair in zip(temporary[:-1], temporary[1:])]
-                    # IDEA -> create a dynamic dictionary like this DICT = {'LINELABEL': CHANNEL.STATES,.....}
+                    # IDEA -> create a dynamic dictionary like this DICT = {'LINE_LABEL': CHANNEL.STATES,.....}
                     # after is possible to check each values in the lines of the path to check for each line the same CH
                     dict_for_ch = {}
                     for temp2 in possible_lines:
                         dict_for_ch[temp2] = self._lines[temp2].state
-                    flag_is = Checking_ch.checking_ch(dict_for_ch)  # in flag_is is stored if there is CH free
+                    nodes_for_swm = temporary.lstrip(temporary[0]).rstrip(temporary[-1])
+                    flag_is = Checking_ch.checking_ch(dict_for_ch, nodes_for_swm, self._nodes,
+                                                      temporary)  # in flag_is is stored if there is CH free
                     # and which one is it, the index
                     if flag_is[0] == 1:
                         the_path_is = temporary
@@ -399,12 +413,32 @@ class Network:
                         k = k + 1
 
                 if k < len(possible_paths):
+                    # print('path' + the_path_is)
+                    # print('ch'+str(the_ch_is))ù
+                    # self.calculate_bit_rate('fixed_rate',GSNR)
                     signal_power = temp.signal_power
                     light_path = LightPath.LightPath(signal_power, the_path_is, the_ch_is)
                     self.propagate(light_path)
                     lines_to_use = [''.join(pair) for pair in zip(the_path_is[:-1], the_path_is[1:])]
                     for temp5 in lines_to_use:
                         self._lines[temp5].state[the_ch_is] = 0
+
+                    nodes_for_swm = the_path_is.lstrip(the_path_is[0]).rstrip(the_path_is[-1])
+                    for n_swm in nodes_for_swm:
+                        index_swm = the_path_is.index(n_swm)
+                        block = (
+                            self._nodes[n_swm].switching_matrix[the_path_is[index_swm - 1]][the_path_is[index_swm + 1]])
+                        # print('the block is' + str(block))
+                        block[the_ch_is] = 0
+                        if the_ch_is == 0:
+                            block[the_ch_is + 1] = 0
+                        elif the_ch_is == 9:
+                            block[the_ch_is - 1] = 0
+                        else:
+                            block[the_ch_is + 1] = 0
+                            block[the_ch_is - 1] = 0
+                        # print(block)
+
                     x = math.log10(light_path.signal_power / light_path.noise_power)
                     y = 10 * x
                     temp.snr = y
@@ -437,7 +471,7 @@ class Network:
         for key in self._lines:
             self._lines[key].successive[key] = self._nodes[key[1]]
             # dataframe creation
-        nodes_in_network = list(self.dictionary.keys())
+        nodes_in_network = list(self._dictionary_2.keys())
         com = itertools.permutations(nodes_in_network, 2)
 
         res = []
@@ -478,5 +512,3 @@ class Network:
                 dict_02[i + 1] = signal_to_noise_ratio
             df_snr = pd.DataFrame(dict_02, index=res)
             print(df_snr)
-
-

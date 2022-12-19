@@ -21,7 +21,7 @@ for k in range(N_CONNECTIONS):
     inp, out = random.sample(list_of_nodes, 2)  # this should take two unique elements from the list
     print("this is destination:" + inp + out)
     connections.append(connection.Connection(inp, out, 1e-3))
-sel = 'latency'
+sel = 'snr'
 weighted_paths.stream(connections, sel)
 # print(len(connections))
 if sel == 'snr':
@@ -32,8 +32,9 @@ if sel == 'snr':
     res = list(filter(lambda item: item != 0, list_of_snr))
     # print(res)
     # print(len(res))
-    weighted_paths.probe()
+    weighted_paths.probe(sel)
     weighted_paths.update_route_space()
+    weighted_paths.calculate_bit_rate('fixed_rate')
     print(weighted_paths.route_space)
     plt.xlabel('SNR [dB]', fontweight='bold')
     plt.ylabel('occurrences', fontweight='bold')

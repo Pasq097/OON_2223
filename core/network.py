@@ -22,7 +22,7 @@ class Network:
         self._lines = {}  # il dizionario ha come key il nome della linea AB,BF etc e come value l'istanza della linea
         self._route_space = None
         self._df = None
-        with open('nodes.json', 'r') as file:
+        with open('../resources/nodes.json', 'r') as file:
             self._dictionary = json.load(file)
             k = 0
             x_values = []
@@ -56,7 +56,7 @@ class Network:
                 lines.append(line.Line(edge, var))
         self._lines = {k: v for k, v in zip(edge, lines)}
 
-        with open(r'C:\Users\Pac\OON_2223\resources\nodes_full.json') as file:
+        with open(r'C:\Users\Pac\OON_2223\resources\nodes_not_full.json') as file:
             self._dictionary_2 = json.load(file)
             k = 0
             x_values = []
@@ -307,19 +307,98 @@ class Network:
             possible_paths_sorted.append(temporary)
         return possible_paths_sorted  # it returns all possible paths sorted from fastest to slower
 
-    def calculate_bit_rate(self, strategy, GSNR):
+    def probe(self, sel='latency'):
+        # need to create two dataframe one for latency and one for SNR
+        for key in self._nodes:  # it gives the list of the letter A, B ,C....
+            for temp in self._nodes[key].connected_nodes:  # it gives the connected nodes of the specific object node
+                self._nodes[key].successive[key + temp] = self._lines[key + temp]
+            # need to call line and create successive as dictionary {line : "node connected to the line"}
+        for key in self._lines:
+            self._lines[key].successive[key] = self._nodes[key[1]]
+            # dataframe creation
+        nodes_in_network = list(self._dictionary_2.keys())
+        com = itertools.permutations(nodes_in_network, 2)
 
+        res = []
+        all_possible_paths = []
+        paths = []
+        for val in com:
+            paths.append(self.find_all_paths(val[0], val[1]))
+
+        for temp in paths:
+            for temporary in temp:
+                all_possible_paths.append(temporary)
+
+        for paths in all_possible_paths:
+            res.append('->'.join(paths))
+
+        # find the total accumulated latency
+        # self.connect()
+        total_accumulated_latency = []
+        total_accumulated_noise = []
+        signal_to_noise_ratio = []
+        for temp in all_possible_paths:
+            s1 = Signal_Information.SignalInformation(1 * 10 ** -3, temp)
+            self.propagate(s1)
+            total_accumulated_latency.append(s1.latency)
+            total_accumulated_noise.append(s1.noise_power)
+            x = math.log10(s1.signal_power / s1.noise_power)
+            y = 10 * x
+            signal_to_noise_ratio.append(y)
+        dict_01 = {}
+        if sel == 'latency':
+            for i in range(0, 10):
+                dict_01[i + 1] = total_accumulated_latency
+            pd.set_option('display.max_rows', None)
+            df_latency = pd.DataFrame(dict_01, index=res, dtype=float)
+            return df_latency
+        elif sel == 'snr':
+            dict_02 = {}
+            for i in range(0, 10):
+                dict_02[i + 1] = signal_to_noise_ratio
+            pd.set_option('display.max_rows', None)
+            df_snr = pd.DataFrame(dict_02, index=res, dtype=float)
+            return df_snr
+
+    def calculate_bit_rate(self, path, strategy):
+        path_to_search = '->'.join(path)
+        df = self.probe('snr')
+        var = list(df.loc[path_to_search])
+        var_lin = 10 ** (var[0]/10)
+        R_s = 32 * 10 ** 9  # GHz
+        B_n = 12.5 * 10 ** 9  # GHz
+        BER = 10 ** -3
+        print('the GSNR is '+ str(var[0]))
         if strategy == 'fixed_rate':
-            R_s = 32 * 10 ** 9  # GHz
-            B_n = 12.5 * 10 ** 9  # GHz
             x = (R_s / B_n)
-            y = scipy.erfcinv(2 * 10 ** (-3))
+            y = scipy.erfcinv(2 * BER)
             z = 2 * y ** 2
             tot = z * x
-            if GSNR >= tot:
+            print('the tot is' + str(tot))
+            if var_lin >= tot:
                 R_b = 100  # Gbps
             else:
                 R_b = 0
+        elif strategy == 'flex-rate':
+            x = (R_s / B_n)
+            y = scipy.erfcinv(2 * BER)
+            z = 2 * y ** 2
+            tot = z * x
+            print(tot)
+            tot2 = (14/3) * (scipy.erfcinv((3/2)*BER))**2 * x
+            print(tot2)
+            tot3 = 10 * (scipy.erfcinv((8/3)*BER))**2 * x
+            print(tot3)
+            if var_lin < tot:
+                R_b = 0
+            elif tot <= var_lin <= tot2:
+                R_b = 100
+            elif tot2 <= var_lin <= tot3:
+                R_b = 200
+            elif var_lin >= tot3:
+                R_b = 400
+        elif strategy == 'shannon':
+            R_b = (2*R_s*math.log2(1+var_lin*(R_s/B_n))) / (10**9)
         return R_b
 
     def stream(self, list_of_connections, selection='snr'):
@@ -344,9 +423,13 @@ class Network:
                     for temp2 in possible_lines:
                         dict_for_ch[temp2] = self._lines[temp2].state
                     nodes_for_swm = temporary.lstrip(temporary[0]).rstrip(temporary[-1])
-                    flag_is = Checking_ch.checking_ch(dict_for_ch, nodes_for_swm, self._nodes,
-                                                      temporary)  # in flag_is is stored if there is CH free
+                    flag_is = Checking_ch.checking_ch(dict_for_ch, nodes_for_swm, self._nodes, temporary)
+                    # in flag_is is stored if there is CH free
                     # and which one is it, the index
+                    # check if the connection has the right amount of bit rate
+                    bit_rate = self.calculate_bit_rate(temporary, 'fixed_rate')
+                    print('the bit rate is ' + str(bit_rate))
+
                     if flag_is[0] == 1:
                         the_path_is = temporary
                         the_ch_is = flag_is[1]
@@ -366,8 +449,7 @@ class Network:
                     nodes_for_swm = the_path_is.lstrip(the_path_is[0]).rstrip(the_path_is[-1])
                     for n_swm in nodes_for_swm:
                         index_swm = the_path_is.index(n_swm)
-                        block = (
-                            self._nodes[n_swm].switching_matrix[the_path_is[index_swm - 1]][the_path_is[index_swm + 1]])
+                        block = (self._nodes[n_swm].switching_matrix[the_path_is[index_swm - 1]][the_path_is[index_swm + 1]])
                         # print('the block is' + str(block))
                         block[the_ch_is] = 0
                         if the_ch_is == 0:
@@ -402,9 +484,11 @@ class Network:
                     for temp2 in possible_lines:
                         dict_for_ch[temp2] = self._lines[temp2].state
                     nodes_for_swm = temporary.lstrip(temporary[0]).rstrip(temporary[-1])
-                    flag_is = Checking_ch.checking_ch(dict_for_ch, nodes_for_swm, self._nodes,
-                                                      temporary)  # in flag_is is stored if there is CH free
+                    flag_is = Checking_ch.checking_ch(dict_for_ch, nodes_for_swm, self._nodes, temporary)  # in flag_is is stored if there is CH free
                     # and which one is it, the index
+                    bit_rate = self.calculate_bit_rate(temporary, 'shannon')
+                    print('the bit rate is ' + str(bit_rate))
+
                     if flag_is[0] == 1:
                         the_path_is = temporary
                         the_ch_is = flag_is[1]
@@ -414,8 +498,7 @@ class Network:
 
                 if k < len(possible_paths):
                     # print('path' + the_path_is)
-                    # print('ch'+str(the_ch_is))ù
-                    # self.calculate_bit_rate('fixed_rate',GSNR)
+                    # print('ch'+str(the_ch_is))
                     signal_power = temp.signal_power
                     light_path = LightPath.LightPath(signal_power, the_path_is, the_ch_is)
                     self.propagate(light_path)
@@ -461,54 +544,3 @@ class Network:
         for i in range(0, 350):
             pd.set_option('display.max_rows', None)
             self._route_space.iloc[i] = result_l[i]
-
-    def probe(self, sel='latency'):
-        # need to create two dataframe one for latency and one for SNR
-        for key in self._nodes:  # it gives the list of the letter A, B ,C....
-            for temp in self._nodes[key].connected_nodes:  # it gives the connected nodes of the specific object node
-                self._nodes[key].successive[key + temp] = self._lines[key + temp]
-            # need to call line and create successive as dictionary {line : "node connected to the line"}
-        for key in self._lines:
-            self._lines[key].successive[key] = self._nodes[key[1]]
-            # dataframe creation
-        nodes_in_network = list(self._dictionary_2.keys())
-        com = itertools.permutations(nodes_in_network, 2)
-
-        res = []
-        all_possible_paths = []
-        paths = []
-        for val in com:
-            paths.append(self.find_all_paths(val[0], val[1]))
-
-        for temp in paths:
-            for temporary in temp:
-                all_possible_paths.append(temporary)
-
-        for paths in all_possible_paths:
-            res.append('->'.join(paths))
-
-        # find the total accumulated latency
-        # self.connect()
-        total_accumulated_latency = []
-        total_accumulated_noise = []
-        signal_to_noise_ratio = []
-        for temp in all_possible_paths:
-            s1 = Signal_Information.SignalInformation(1 * 10 ** -3, temp)
-            self.propagate(s1)
-            total_accumulated_latency.append(s1.latency)
-            total_accumulated_noise.append(s1.noise_power)
-            x = math.log10(s1.signal_power / s1.noise_power)
-            y = 10 * x
-            signal_to_noise_ratio.append(y)
-        dict_01 = {}
-        if sel == 'latency':
-            for i in range(0, 10):
-                dict_01[i + 1] = total_accumulated_latency
-            df_latency = pd.DataFrame(dict_01, index=res)
-            print(df_latency)
-        elif sel == 'snr':
-            dict_02 = {}
-            for i in range(0, 10):
-                dict_02[i + 1] = signal_to_noise_ratio
-            df_snr = pd.DataFrame(dict_02, index=res)
-            print(df_snr)

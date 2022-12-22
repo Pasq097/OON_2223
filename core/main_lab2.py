@@ -14,7 +14,7 @@ list_of_nodes = []
 connections = []
 for keys in weighted_paths.dictionary:
     list_of_nodes.append(keys)
-    #special = ['A', 'B']
+    # special = ['A', 'B']
 
 
 for k in range(N_CONNECTIONS):
@@ -32,10 +32,11 @@ if sel == 'snr':
     res = list(filter(lambda item: item != 0, list_of_snr))
     # print(res)
     # print(len(res))
-    weighted_paths.probe(sel)
+    a = weighted_paths.probe('snr')
+    print(a)
     weighted_paths.update_route_space()
-    weighted_paths.calculate_bit_rate('fixed_rate')
     print(weighted_paths.route_space)
+
     plt.xlabel('SNR [dB]', fontweight='bold')
     plt.ylabel('occurrences', fontweight='bold')
     plt.title("SNR distribution")
@@ -48,7 +49,8 @@ else:
         # print(temp.latency)
     res = list(filter(lambda item: item is not None, list_of_latency))
     # print(len(res))
-    a = weighted_paths.probe()
+    a = weighted_paths.probe('latency')
+    print(a)
     b = weighted_paths.route_space
 
     weighted_paths.update_route_space()

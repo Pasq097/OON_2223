@@ -56,7 +56,7 @@ class Network:
                 lines.append(line.Line(edge, var))
         self._lines = {k: v for k, v in zip(edge, lines)}
 
-        with open(r'C:\Users\Pac\OON_2223\resources\nodes_not_full.json') as file:
+        with open(r'C:\Users\Pac\OON_2223\resources\nodes_full_flex_rate.json') as file:
             self._dictionary_2 = json.load(file)
             k = 0
             x_values = []
@@ -95,6 +95,9 @@ class Network:
         for key in self._dictionary_2:
             a = self._dictionary_2[key]['switching_matrix']
             self._switching_matrices[key] = a
+        self._strategy = []
+        for key in self._dictionary_2:
+            self._strategy.append(self._dictionary_2[key]['transceiver'])
 
     @property
     def dictionary_2(self):
@@ -195,6 +198,8 @@ class Network:
 
         for key in self._dictionary_2:
             self._nodes[key].switching_matrix = self._switching_matrices[key]
+            for i in self._strategy:
+                self._nodes[key].transceiver = i
 
         # block = self._nodes['A'].switching_matrix['C']['B']
         # print(block)
@@ -368,27 +373,27 @@ class Network:
         R_s = 32 * 10 ** 9  # GHz
         B_n = 12.5 * 10 ** 9  # GHz
         BER = 10 ** -3
-        print('the GSNR is '+ str(var[0]))
+        # print('the GSNR is '+ str(var[0]))
         if strategy == 'fixed_rate':
             x = (R_s / B_n)
             y = scipy.erfcinv(2 * BER)
             z = 2 * y ** 2
             tot = z * x
-            print('the tot is' + str(tot))
+            # print('the tot is' + str(tot))
             if var_lin >= tot:
                 R_b = 100  # Gbps
             else:
                 R_b = 0
-        elif strategy == 'flex-rate':
+        elif strategy == 'flex_rate':
             x = (R_s / B_n)
             y = scipy.erfcinv(2 * BER)
             z = 2 * y ** 2
             tot = z * x
-            print(tot)
+            # print(tot)
             tot2 = (14/3) * (scipy.erfcinv((3/2)*BER))**2 * x
-            print(tot2)
+            # print(tot2)
             tot3 = 10 * (scipy.erfcinv((8/3)*BER))**2 * x
-            print(tot3)
+            # print(tot3)
             if var_lin < tot:
                 R_b = 0
             elif tot <= var_lin <= tot2:
@@ -427,10 +432,20 @@ class Network:
                     # in flag_is is stored if there is CH free
                     # and which one is it, the index
                     # check if the connection has the right amount of bit rate
-                    bit_rate = self.calculate_bit_rate(temporary, 'fixed_rate')
-                    print('the bit rate is ' + str(bit_rate))
+                    # check only the first node for the strategy
 
-                    if flag_is[0] == 1:
+                    x = temporary[0]
+                    strategy = self._nodes[x].transceiver
+                    bit_rate = self.calculate_bit_rate(temporary, strategy)
+                    # print('the bit rate is ' + str(bit_rate))
+
+                    temp.bit_rate = bit_rate
+
+                    if bit_rate == 0:      # zero bit rate case, need to reject the connection
+                        print('the connection over this path is rejected')
+                        break
+
+                    elif flag_is[0] == 1:
                         the_path_is = temporary
                         the_ch_is = flag_is[1]
                         break
@@ -486,8 +501,11 @@ class Network:
                     nodes_for_swm = temporary.lstrip(temporary[0]).rstrip(temporary[-1])
                     flag_is = Checking_ch.checking_ch(dict_for_ch, nodes_for_swm, self._nodes, temporary)  # in flag_is is stored if there is CH free
                     # and which one is it, the index
-                    bit_rate = self.calculate_bit_rate(temporary, 'shannon')
+                    x = temporary[0]
+                    strategy = self._nodes[x].transceiver
+                    bit_rate = self.calculate_bit_rate(temporary, strategy)
                     print('the bit rate is ' + str(bit_rate))
+                    temp.bit_rate = bit_rate
 
                     if flag_is[0] == 1:
                         the_path_is = temporary

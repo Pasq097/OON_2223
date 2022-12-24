@@ -9,10 +9,15 @@ class Node:
         self._connected_nodes = connected_nodes
         self._successive = {}
         self._switching_matrix = None
+        self._transceiver = None
 
     @property  # getter
     def label(self):
         return self._label
+
+    @property
+    def label(self):
+        return self._transceiver
 
     @property
     def position(self):

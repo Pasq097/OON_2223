@@ -8,10 +8,15 @@ class Connection:
         self._signal_power = signal_power
         self._latency = None
         self.snr = 0
+        self._bit_rate = None
 
     @property  # Getter
     def input(self):
         return self._input
+
+    @property
+    def bit_rate(self):
+        return self._bit_rate
 
     @property
     def output(self):
@@ -36,6 +41,10 @@ class Connection:
     @output.setter
     def output(self, output):
         self._output = output
+
+    @bit_rate.setter
+    def bit_rate(self, bit_rate):
+        self._bit_rate = bit_rate
 
     @signal_power.setter
     def signal_power(self, signal_power):

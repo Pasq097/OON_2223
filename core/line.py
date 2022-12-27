@@ -1,4 +1,5 @@
 import numpy as np
+import math
 
 
 class Line:
@@ -82,9 +83,15 @@ class Line:
 
         return ASE
 
-    # def nli_generation(self):
+    def nli_generation(self, R_s, N_ch, delta_f):
         # in linear units
+        pi = math.pi
+        alpha_lin = self._alpha_dB/(20 * math.log10(math.e))
+        L_eff = 1 / (2 * alpha_lin)
 
+        ni_nli = (16 / 27*pi) * math.log10((pi**2/2) * ((self._beta * R_s**2)/alpha_lin) * N_ch ** ( 2 * (R_s / delta_f))) * alpha_lin/self._beta * self._gamma ** 2 * L_eff ** 2 / R_s ** 3
+
+        return
     def propagate(self, signal_information):
         # if I'm on a line e.g. AB I can only go on a successive node e.g. B it's simpler thant node propagate method
         # it has to update latency and noise_power

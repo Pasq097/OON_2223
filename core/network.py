@@ -167,6 +167,14 @@ class Network:
                     paths.append(newpath)
         return paths
 
+    def n_amplifiers_calc_lines(self):
+        for linea in self._lines:
+            length = self._lines[linea].length
+            n_a = length / (80*10**3)
+            n_a = round(n_a)
+            # print(n_a)
+            self._lines[linea].n_amplifiers = n_a
+
     def connect(self):
         # need to call node and create successive as dictionary { node : "lines connected to the node"}
         for key in self._nodes:  # it gives the list of the letter A, B ,C....
@@ -206,6 +214,7 @@ class Network:
         # block = current_switching_matrix['A']['B']
         # print(block)
         # dataframe creation
+        self.n_amplifiers_calc_lines()
         nodes_in_network = list(self._dictionary_2.keys())
         com = itertools.permutations(nodes_in_network, 2)
 
@@ -369,7 +378,7 @@ class Network:
         path_to_search = '->'.join(path)
         df = self.probe('snr')
         var = list(df.loc[path_to_search])
-        var_lin = 10 ** (var[0]/10)
+        var_lin = 10 ** (var[0] / 10)
         R_s = 32 * 10 ** 9  # GHz
         B_n = 12.5 * 10 ** 9  # GHz
         BER = 10 ** -3
@@ -390,9 +399,9 @@ class Network:
             z = 2 * y ** 2
             tot = z * x
             # print(tot)
-            tot2 = (14/3) * (scipy.erfcinv((3/2)*BER))**2 * x
+            tot2 = (14 / 3) * (scipy.erfcinv((3 / 2) * BER)) ** 2 * x
             # print(tot2)
-            tot3 = 10 * (scipy.erfcinv((8/3)*BER))**2 * x
+            tot3 = 10 * (scipy.erfcinv((8 / 3) * BER)) ** 2 * x
             # print(tot3)
             if var_lin < tot:
                 R_b = 0
@@ -403,7 +412,7 @@ class Network:
             elif var_lin >= tot3:
                 R_b = 400
         elif strategy == 'shannon':
-            R_b = (2*R_s*math.log2(1+var_lin*(R_s/B_n))) / (10**9)
+            R_b = (2 * R_s * math.log2(1 + var_lin * (R_s / B_n))) / (10 ** 9)
         return R_b
 
     def stream(self, list_of_connections, selection='snr'):
@@ -441,7 +450,7 @@ class Network:
 
                     temp.bit_rate = bit_rate
 
-                    if bit_rate == 0:      # zero bit rate case, need to reject the connection
+                    if bit_rate == 0:  # zero bit rate case, need to reject the connection
                         print('the connection over this path is rejected')
                         break
 
@@ -464,7 +473,8 @@ class Network:
                     nodes_for_swm = the_path_is.lstrip(the_path_is[0]).rstrip(the_path_is[-1])
                     for n_swm in nodes_for_swm:
                         index_swm = the_path_is.index(n_swm)
-                        block = (self._nodes[n_swm].switching_matrix[the_path_is[index_swm - 1]][the_path_is[index_swm + 1]])
+                        block = (
+                        self._nodes[n_swm].switching_matrix[the_path_is[index_swm - 1]][the_path_is[index_swm + 1]])
                         # print('the block is' + str(block))
                         block[the_ch_is] = 0
                         if the_ch_is == 0:
@@ -499,7 +509,8 @@ class Network:
                     for temp2 in possible_lines:
                         dict_for_ch[temp2] = self._lines[temp2].state
                     nodes_for_swm = temporary.lstrip(temporary[0]).rstrip(temporary[-1])
-                    flag_is = Checking_ch.checking_ch(dict_for_ch, nodes_for_swm, self._nodes, temporary)  # in flag_is is stored if there is CH free
+                    flag_is = Checking_ch.checking_ch(dict_for_ch, nodes_for_swm, self._nodes,
+                                                      temporary)  # in flag_is is stored if there is CH free
                     # and which one is it, the index
                     x = temporary[0]
                     strategy = self._nodes[x].transceiver

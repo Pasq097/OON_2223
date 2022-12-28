@@ -1,5 +1,6 @@
 import numpy as np
 import math
+import LightPath
 
 
 class Line:
@@ -14,8 +15,8 @@ class Line:
         self._n_amplifiers = None       # Calculate this number with the line length, one amplifier for 80 km
         self._gain = 16  # dB
         self._noise_figure = 5.5  # dB
-        self._alpha_dB = 0.2       # dB / km
-        self._beta = 2.13e-26      # ps^2/km
+        self._alpha_dB = 0.2 / 10**3      # dB / km
+        self._beta = 2.13 * 10**-26  # ps^2/km
         self._gamma = 1.27e-3         # Wm-1
 
     @property  # Getter
@@ -65,11 +66,6 @@ class Line:
         latency = length / c_f
         return latency
 
-    def noise_generation(self, length, signal_power):
-        # 1e-9 * signal_power * length
-        noise_power = length * (10 ** (-9)) * signal_power
-        return noise_power
-
     def ase_generation(self, number_of_amplifiers):
         # ASE = N (h * f * Bn * NF * [G-1]
         # in linear units
@@ -83,16 +79,30 @@ class Line:
 
         return ASE
 
-    def nli_generation(self, R_s, N_ch, delta_f):
+    def nli_generation(self, R_s, delta_f, P_ch, n_span):
         # in linear units
         pi = math.pi
-        alpha_lin = self._alpha_dB/(20 * math.log10(math.e))
+        N_ch = 10                           # number of channels
+        alpha_lin = self._alpha_dB/(10 * math.log10(math.e))
         L_eff = 1 / (2 * alpha_lin)
+        B_n = 12.5 * 10**9
+        beta = self._beta
+        ni_nli = (16 / 27*pi) * math.log10((pi**2/2) * ((beta * R_s**2)/alpha_lin) * N_ch ** (2 * (R_s / delta_f))) * alpha_lin/beta * self._gamma ** 2 * L_eff ** 2 / R_s ** 3
+        NLI = P_ch**3 * ni_nli * n_span * B_n
 
-        ni_nli = (16 / 27*pi) * math.log10((pi**2/2) * ((self._beta * R_s**2)/alpha_lin) * N_ch ** ( 2 * (R_s / delta_f))) * alpha_lin/self._beta * self._gamma ** 2 * L_eff ** 2 / R_s ** 3
+        return NLI
 
-        return
-    def propagate(self, signal_information):
+    def noise_generation(self, number_of_amplifiers,  R_s, delta_f, P_ch):
+
+        # 1e-9 * signal_power * length
+        # noise_power = length * (10 ** (-9)) * signal_power
+        noise_contribution_1 = self.ase_generation(number_of_amplifiers)
+        noise_contribution_2 = self.nli_generation(R_s, delta_f, P_ch, number_of_amplifiers)
+        noise_power = noise_contribution_1 + noise_contribution_2
+        # print(noise_power)
+        return noise_power
+
+    def propagate(self, light_path):
         # if I'm on a line e.g. AB I can only go on a successive node e.g. B it's simpler thant node propagate method
         # it has to update latency and noise_power
         # for temp in self._state:
@@ -100,17 +110,12 @@ class Line:
         # ch = signal_information.light_path
         # self.state[ch] = 0
         for node in self._successive:
-            self._successive[node].propagate(signal_information)
+            self._successive[node].propagate(light_path)
         # self._state = 0
         # we have to "feed" the method the length of the current line
-        noise_power = self.noise_generation(self._length, signal_information.signal_power)
-        signal_information.update_noise_power(noise_power)
+        noise_power = self.noise_generation(self._n_amplifiers, light_path.Rs, light_path.df,  light_path.signal_power)
+        light_path.update_noise_power(noise_power)
         latency = self.latency_generation(self._length)
-
-        # ASE = self.ase_generation(self._n_amplifiers)
-        # print(ASE)
-
-        signal_information.update_latency(latency)
-
+        light_path.update_latency(latency)
         # we need to modify the method propagate as that it will propagate the signal on a free channel ???
         # we need to check if the channel is free, where?

@@ -237,7 +237,7 @@ class Network:
         total_accumulated_noise = []
         signal_to_noise_ratio = []
         for temp in all_possible_paths:
-            s1 = Signal_Information.SignalInformation(1 * 10 ** -3, temp)
+            s1 = LightPath.LightPath(1 * 10 ** -3, temp, 1)
             self.propagate(s1)
             total_accumulated_latency.append(s1.latency)
             total_accumulated_noise.append(s1.noise_power)
@@ -259,15 +259,15 @@ class Network:
         self._route_space = pd.DataFrame(dict_03, index=res)
         print(self._route_space)
 
-    def propagate(self, signal_information):
+    def propagate(self, light_path):
         # has to propagate the signal_information through the specified path
         # return the modified spectral_information's
         # it call the first propagate, it's like starting the domino
         for node in self._nodes:
-            if len(signal_information.path) == 0:
+            if len(light_path.path) == 0:
                 return
-            if signal_information.path[0] == node[0]:
-                self._nodes[node].propagate(signal_information)
+            if light_path.path[0] == node[0]:
+                self._nodes[node].propagate(light_path)
 
     # Define a method that returns the path with the best snr for a given pair of nodes
     def find_best_snr(self, node_1, node_2):
@@ -352,7 +352,7 @@ class Network:
         total_accumulated_noise = []
         signal_to_noise_ratio = []
         for temp in all_possible_paths:
-            s1 = Signal_Information.SignalInformation(1 * 10 ** -3, temp)
+            s1 = LightPath.LightPath(1 * 10 ** -3, temp, 1)
             self.propagate(s1)
             total_accumulated_latency.append(s1.latency)
             total_accumulated_noise.append(s1.noise_power)
@@ -515,7 +515,7 @@ class Network:
                     x = temporary[0]
                     strategy = self._nodes[x].transceiver
                     bit_rate = self.calculate_bit_rate(temporary, strategy)
-                    print('the bit rate is ' + str(bit_rate))
+                    # print('the bit rate is ' + str(bit_rate))
                     temp.bit_rate = bit_rate
 
                     if flag_is[0] == 1:

@@ -12,3 +12,11 @@ class LightPath(SignalInformation):
 
     def light_path(self, light_path):
         self._light_path = light_path
+
+    @property  # Getter
+    def Rs(self):
+        return self._Rs
+
+    @property  # Getter
+    def df(self):
+        return self._df

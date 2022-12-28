@@ -58,13 +58,13 @@ class Node:
     # Define a propagate method that update a signal information object modifying its path attribute and call the
     # successive element propagate method, accordingly to the specified path.
 
-    def propagate(self, signal_information):
+    def propagate(self, light_path):
         # it has to propagate the signal_information, in the node the next element is a line
         # we need to access the dict successive and update the path
-        signal_information.update_path()  # update the path so if the path in the obj was A,B,C.. it will # be B,C,D..
+        light_path.update_path()  # update the path so if the path in the obj was A,B,C.. it will # be B,C,D..
         # path = signal_information.path    # successive = {"AB": obj of the line AB}
         for line in self._successive:
-            if len(signal_information.path) == 0:
+            if len(light_path.path) == 0:
                 return
-            if signal_information.path[0] == line[1]:
-                self._successive[line].propagate(signal_information)
+            if light_path.path[0] == line[1]:
+                self._successive[line].propagate(light_path)

@@ -1,3 +1,4 @@
+import line
 
 class Node:
     """Model the nodes"""
@@ -63,8 +64,15 @@ class Node:
         # we need to access the dict successive and update the path
         light_path.update_path()  # update the path so if the path in the obj was A,B,C.. it will # be B,C,D..
         # path = signal_information.path    # successive = {"AB": obj of the line AB}
+        # set for each line the optimal launch power
+        the_current_power_is = light_path.signal_power
+        light_path.signal_power = 0.9*10**-3
+        # print(light_path.signal_power)
+
         for line in self._successive:
             if len(light_path.path) == 0:
                 return
             if light_path.path[0] == line[1]:
+                p_opt = self._successive[line].propagate(light_path)
+                light_path.signal_power = p_opt + 1
                 self._successive[line].propagate(light_path)

@@ -136,9 +136,11 @@ class Line:
         noise_power = x_1[0]
         nli = x_1[1]
         popt = self.optimized_launch_power(nli)
+
         # print(popt)
         light_path.update_noise_power(noise_power)
         latency = self.latency_generation(self._length)
         light_path.update_latency(latency)
         # we need to modify the method propagate as that it will propagate the signal on a free channel ???
         # we need to check if the channel is free, where?
+        return popt

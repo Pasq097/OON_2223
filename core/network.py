@@ -1,4 +1,6 @@
 import json
+import random
+
 import node
 import line
 import numpy as np
@@ -414,6 +416,20 @@ class Network:
         elif strategy == 'shannon':
             R_b = (2 * R_s * math.log2(1 + var_lin * (R_s / B_n))) / (10 ** 9)
         return R_b
+
+    def creation_of_random_traffic_matrix(self):
+        columns_dict = {}
+        rows = []
+        values = [0, 9999999]
+
+        for key in self._nodes:
+            columns_dict[key] = random.choice(values)
+            rows.append(key)
+        df = pd.DataFrame(columns_dict, index=rows, dtype=None)
+        np.fill_diagonal(df.values, 0)
+        print(df)
+
+    def traffic_matrix_management(self, traffic_matrix):
 
     def stream(self, list_of_connections, selection='snr'):
         # Route space has to be a pandas dataframe that for all the possible paths describe the availability for each CH

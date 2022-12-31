@@ -47,6 +47,7 @@ if sel == 'snr':
     weighted_paths.update_route_space()
     print(weighted_paths.route_space)
     weighted_paths.n_amplifiers_calc_lines()
+    weighted_paths.creation_of_random_traffic_matrix()
 
     plt.xlabel('SNR [dB]', fontweight='bold')
     plt.ylabel('occurrences', fontweight='bold')

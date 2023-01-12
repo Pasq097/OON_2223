@@ -1,6 +1,6 @@
 import json
 import random
-
+import connection
 import node
 import line
 import numpy as np
@@ -171,7 +171,7 @@ class Network:
     def n_amplifiers_calc_lines(self):
         for linea in self._lines:
             length = self._lines[linea].length
-            n_a = length / (80*10**3)
+            n_a = length / (80 * 10 ** 3)
             n_a = round(n_a)
             # print(n_a)
             self._lines[linea].n_amplifiers = n_a
@@ -420,18 +420,46 @@ class Network:
     def creation_of_random_traffic_matrix(self):
         columns_dict = {}
         rows = []
-        values = [0, 9999999]
+        M = 20
+        values = M * 100
 
         for key in self._nodes:
-            columns_dict[key] = random.choice(values)
+            columns_dict[key] = values
             rows.append(key)
-        df = pd.DataFrame(columns_dict, index=rows, dtype=None)
+        df = pd.DataFrame(columns_dict, index=rows, dtype=float)
         np.fill_diagonal(df.values, 0)
         print(df)
+        return df
 
     def traffic_matrix_management(self, traffic_matrix):
+        # creates and manages the connections given a traffic matrix
+        list_of_nodes = list(traffic_matrix.iloc[:0])
+        flag = 0
+        while flag == 0:
+            inp, out = random.sample(list_of_nodes, 2)
+            x = traffic_matrix.at[inp, out]
+            if x == 0:
+                flag = 0
+                values = []
+                for x in list_of_nodes:
+                    values.append((traffic_matrix[x] == 0).all())
+                flag_control_1 = all(values)
+                if flag_control_1 == True:
+                    break
+            else:
+                flag = 1
+                flag_control_1 = False
 
-    def stream(self, list_of_connections, selection='snr'):
+        return inp, out, flag_control_1
+
+        # extraction of the random couples of node, uniform distribution
+        # if flag_control_1 == False:
+        #     inp, out = random.sample(list_of_nodes, 2)
+        #     return inp, out
+        # else:
+        #     return traffic_matrix
+
+    def stream(self, selection='snr'):
         # Route space has to be a pandas dataframe that for all the possible paths describe the availability for each CH
         #         1    2    3     4     5  ... 10
         # A->B    0    0    1     0     1  ... 1
@@ -439,13 +467,21 @@ class Network:
         # ....   ...  ...  ...   ...   ... ... ...
         # How to find out if the CH of a specific path is free or not?
         # Note that one signal from root->target need to be transmitted on the same CH for each line
+        flag_control = False
+        trf_mtrx = self.creation_of_random_traffic_matrix()
+
         if selection == 'latency':
-            for temp in list_of_connections:
-                possible_paths = self.find_best_latency(temp.input, temp.output)
-                # k = 0
+            while flag_control == False:
+                values = self.traffic_matrix_management(trf_mtrx)
+                input = values[0]
+                output = values[1]
+                temp = connection.Connection(input, output, 1e-3)
+                flag_control = values[2]
+                possible_paths = self.find_best_latency(input, output)
+                k = 0
                 dict_for_ch = {}
                 for temporary in possible_paths:
-                    k = 0
+
                     possible_lines = [''.join(pair) for pair in zip(temporary[:-1], temporary[1:])]
                     # IDEA -> create a dynamic dictionary like this DICT = {'LINE_LABEL': CHANNEL.STATES,.....}
                     # after is possible to check each values in the lines of the path to check for each line the same CH
@@ -464,6 +500,7 @@ class Network:
                         break
                     else:
                         k = k + 1
+
                 if k < len(possible_paths):
                     # print('path' + the_path_is)
                     # print('ch'+str(the_ch_is))
@@ -472,8 +509,14 @@ class Network:
                     x = temporary[0]
                     strategy = self._nodes[x].transceiver
                     bit_rate = self.calculate_bit_rate(light_path, temporary, strategy)
+                    # sottr. between the bit rate and the capacity need to allocate
+                    x = trf_mtrx.at[input, output]
+                    new_value = x - bit_rate
+                    if new_value < 0:
+                        new_value = 0
+                    trf_mtrx.at[temp.input, temp.output] = new_value
                     # print('the bit rate is ' + str(bit_rate))
-
+                    print(trf_mtrx)
                     temp.bit_rate = bit_rate
 
                     if bit_rate == 0:  # zero bit rate case, need to reject the connection
@@ -488,7 +531,7 @@ class Network:
                     for n_swm in nodes_for_swm:
                         index_swm = the_path_is.index(n_swm)
                         block = (
-                        self._nodes[n_swm].switching_matrix[the_path_is[index_swm - 1]][the_path_is[index_swm + 1]])
+                            self._nodes[n_swm].switching_matrix[the_path_is[index_swm - 1]][the_path_is[index_swm + 1]])
                         # print('the block is' + str(block))
                         block[the_ch_is] = 0
                         if the_ch_is == 0:
@@ -505,17 +548,23 @@ class Network:
                     temp.snr = y
                     temp.latency = light_path.latency
                 elif k >= len(possible_paths):
+                    print('non riesco ad allocare il traffico')
+                    flag_control = True
                     temp.snr = 0
                     temp.latency = None
 
+
         elif selection == 'snr':
-            for temp in list_of_connections:
-                possible_paths = self.find_best_snr(temp.input, temp.output)
-                # print(possible_paths)
+            while flag_control == False:
+                values = self.traffic_matrix_management(trf_mtrx)
+                input = values[0]
+                output = values[1]
+                temp = connection.Connection(input, output, 1e-3)
+                flag_control = values[2]
+                possible_paths = self.find_best_latency(input, output)
                 k = 0
                 dict_for_ch = {}
                 for temporary in possible_paths:
-                    k = 0
                     possible_lines = [''.join(pair) for pair in zip(temporary[:-1], temporary[1:])]
                     # IDEA -> create a dynamic dictionary like this DICT = {'LINE_LABEL': CHANNEL.STATES,.....}
                     # after is possible to check each values in the lines of the path to check for each line the same CH
@@ -541,6 +590,13 @@ class Network:
                     x = temporary[0]
                     strategy = self._nodes[x].transceiver
                     bit_rate = self.calculate_bit_rate(light_path, temporary, strategy)
+                    x = trf_mtrx.at[input, output]
+                    new_value = x - bit_rate
+                    if new_value < 0:
+                        new_value = 0
+                    trf_mtrx.at[temp.input, temp.output] = new_value
+                    # print('the bit rate is ' + str(bit_rate))
+                    print(trf_mtrx)
                     # print('the bit rate is ' + str(bit_rate))
                     temp.bit_rate = bit_rate
 
@@ -573,6 +629,8 @@ class Network:
                     temp.snr = y
                     temp.latency = light_path.latency
                 elif k >= len(possible_paths):
+                    print('non riesco ad allocare il traffico')
+                    flag_control = True
                     temp.snr = 0
                     temp.latency = None
 

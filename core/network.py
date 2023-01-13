@@ -13,7 +13,9 @@ import Checking_ch
 import LightPath
 import update_route
 import scipy.special as scipy
-
+import BitRateHist
+import snr_distribution_hist
+import LatencyDistribution
 
 class Network:
     """Model for the network"""
@@ -420,7 +422,7 @@ class Network:
     def creation_of_random_traffic_matrix(self):
         columns_dict = {}
         rows = []
-        M = 20
+        M = 10
         values = M * 100
 
         for key in self._nodes:
@@ -452,13 +454,6 @@ class Network:
 
         return inp, out, flag_control_1
 
-        # extraction of the random couples of node, uniform distribution
-        # if flag_control_1 == False:
-        #     inp, out = random.sample(list_of_nodes, 2)
-        #     return inp, out
-        # else:
-        #     return traffic_matrix
-
     def stream(self, selection='snr'):
         # Route space has to be a pandas dataframe that for all the possible paths describe the availability for each CH
         #         1    2    3     4     5  ... 10
@@ -471,6 +466,8 @@ class Network:
         trf_mtrx = self.creation_of_random_traffic_matrix()
 
         if selection == 'latency':
+            list_of_latency = []
+            list_of_bit_rate = []
             while flag_control == False:
                 values = self.traffic_matrix_management(trf_mtrx)
                 input = values[0]
@@ -547,14 +544,24 @@ class Network:
                     y = 10 * x
                     temp.snr = y
                     temp.latency = light_path.latency
+                    list_of_latency.append(temp.latency)
+                    list_of_bit_rate.append(temp.bit_rate)
+                    
+                    if flag_control == True:
+                        LatencyDistribution.latency_hist(list_of_latency)
+                        BitRateHist.bit_rate_hist(list_of_bit_rate)
+
                 elif k >= len(possible_paths):
                     print('non riesco ad allocare il traffico')
                     flag_control = True
                     temp.snr = 0
                     temp.latency = None
-
+                    LatencyDistribution.latency_hist(list_of_latency)
+                    BitRateHist.bit_rate_hist(list_of_bit_rate)
 
         elif selection == 'snr':
+            list_of_snr = []
+            list_of_bit_rate = []
             while flag_control == False:
                 values = self.traffic_matrix_management(trf_mtrx)
                 input = values[0]
@@ -628,11 +635,21 @@ class Network:
                     y = 10 * x
                     temp.snr = y
                     temp.latency = light_path.latency
+
+                    list_of_snr.append(temp.snr)
+                    list_of_bit_rate.append(temp.bit_rate)
+                    if flag_control == True:
+                        snr_distribution_hist.snr_hist(list_of_snr)
+                        BitRateHist.bit_rate_hist(list_of_bit_rate)
+
                 elif k >= len(possible_paths):
                     print('non riesco ad allocare il traffico')
                     flag_control = True
                     temp.snr = 0
                     temp.latency = None
+                    snr_distribution_hist.snr_hist(list_of_snr)
+                    BitRateHist.bit_rate_hist(list_of_bit_rate)
+
 
     def update_route_space(self):
 

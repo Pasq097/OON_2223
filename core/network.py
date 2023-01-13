@@ -17,6 +17,7 @@ import BitRateHist
 import snr_distribution_hist
 import LatencyDistribution
 
+
 class Network:
     """Model for the network"""
 
@@ -252,15 +253,15 @@ class Network:
         # signal-to-noise ratio 10log(signal_power/noise_power)
         column = ['path', 'total latency', 'accumulated noise', 'signal-to-noise-ratio [dB]']
         pd.set_option("display.precision", 10)
-        self._df = pd.DataFrame(mylist, column, dtype=float)
+        self._df = pd.DataFrame(mylist, column, dtype=None)
         self._df = self._df.transpose()
-        print(self._df)
+        # print(self._df)                               ##############################
 
         dict_03 = {}
         for i in range(0, 10):
             dict_03[i] = 1
         self._route_space = pd.DataFrame(dict_03, index=res)
-        print(self._route_space)
+        # print(self._route_space)                       #######################################
 
     def propagate(self, light_path):
         # has to propagate the signal_information through the specified path
@@ -430,7 +431,7 @@ class Network:
             rows.append(key)
         df = pd.DataFrame(columns_dict, index=rows, dtype=float)
         np.fill_diagonal(df.values, 0)
-        print(df)
+        #print(df)
         return df
 
     def traffic_matrix_management(self, traffic_matrix):
@@ -453,6 +454,11 @@ class Network:
                 flag_control_1 = False
 
         return inp, out, flag_control_1
+
+    # def reset_of_the_ch(self):
+    #     for line_obj in self._lines:
+    #         self._lines[line_obj]._state = np.ones(10, dtype=int)
+    #
 
     def stream(self, selection='snr'):
         # Route space has to be a pandas dataframe that for all the possible paths describe the availability for each CH
@@ -513,7 +519,7 @@ class Network:
                         new_value = 0
                     trf_mtrx.at[temp.input, temp.output] = new_value
                     # print('the bit rate is ' + str(bit_rate))
-                    print(trf_mtrx)
+                    #print(trf_mtrx)
                     temp.bit_rate = bit_rate
 
                     if bit_rate == 0:  # zero bit rate case, need to reject the connection
@@ -546,7 +552,7 @@ class Network:
                     temp.latency = light_path.latency
                     list_of_latency.append(temp.latency)
                     list_of_bit_rate.append(temp.bit_rate)
-                    
+
                     if flag_control == True:
                         LatencyDistribution.latency_hist(list_of_latency)
                         BitRateHist.bit_rate_hist(list_of_bit_rate)
@@ -562,6 +568,9 @@ class Network:
         elif selection == 'snr':
             list_of_snr = []
             list_of_bit_rate = []
+            # dict_for_ch = {}
+            #self.reset_of_the_ch()
+
             while flag_control == False:
                 values = self.traffic_matrix_management(trf_mtrx)
                 input = values[0]
@@ -570,17 +579,19 @@ class Network:
                 flag_control = values[2]
                 possible_paths = self.find_best_latency(input, output)
                 k = 0
-                dict_for_ch = {}
+
                 for temporary in possible_paths:
                     possible_lines = [''.join(pair) for pair in zip(temporary[:-1], temporary[1:])]
                     # IDEA -> create a dynamic dictionary like this DICT = {'LINE_LABEL': CHANNEL.STATES,.....}
                     # after is possible to check each values in the lines of the path to check for each line the same CH
                     dict_for_ch = {}
+
                     for temp2 in possible_lines:
                         dict_for_ch[temp2] = self._lines[temp2].state
                     nodes_for_swm = temporary.lstrip(temporary[0]).rstrip(temporary[-1])
                     flag_is = Checking_ch.checking_ch(dict_for_ch, nodes_for_swm, self._nodes,
                                                       temporary)  # in flag_is is stored if there is CH free
+
                     # and which one is it, the index
                     if flag_is[0] == 1:
                         the_path_is = temporary
@@ -603,7 +614,7 @@ class Network:
                         new_value = 0
                     trf_mtrx.at[temp.input, temp.output] = new_value
                     # print('the bit rate is ' + str(bit_rate))
-                    print(trf_mtrx)
+                    #print(trf_mtrx)
                     # print('the bit rate is ' + str(bit_rate))
                     temp.bit_rate = bit_rate
 
@@ -638,17 +649,20 @@ class Network:
 
                     list_of_snr.append(temp.snr)
                     list_of_bit_rate.append(temp.bit_rate)
-                    if flag_control == True:
-                        snr_distribution_hist.snr_hist(list_of_snr)
-                        BitRateHist.bit_rate_hist(list_of_bit_rate)
+                    #if flag_control == True:
+                        #snr_distribution_hist.snr_hist(list_of_snr)
+                        #BitRateHist.bit_rate_hist(list_of_bit_rate)
+                        #print(trf_mtrx)
 
                 elif k >= len(possible_paths):
                     print('non riesco ad allocare il traffico')
                     flag_control = True
                     temp.snr = 0
                     temp.latency = None
-                    snr_distribution_hist.snr_hist(list_of_snr)
-                    BitRateHist.bit_rate_hist(list_of_bit_rate)
+                    #print(trf_mtrx)
+                    #snr_distribution_hist.snr_hist(list_of_snr)
+                    #BitRateHist.bit_rate_hist(list_of_bit_rate)
+            return list_of_snr
 
 
     def update_route_space(self):

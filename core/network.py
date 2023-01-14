@@ -60,7 +60,7 @@ class Network:
                 lines.append(line.Line(edge, var))
         self._lines = {k: v for k, v in zip(edge, lines)}
 
-        with open(r'C:\Users\Pac\OON_2223\resources\nodes_full_flex_rate.json') as file:
+        with open(r'C:\Users\Pac\OON_2223\resources\nodes_full_fixed_rate.json') as file:
             self._dictionary_2 = json.load(file)
             k = 0
             x_values = []
@@ -421,32 +421,46 @@ class Network:
         return R_b
 
     def creation_of_random_traffic_matrix(self):
-        columns_dict = {}
-        rows = []
-        M = 10
-        values = M * 100
 
+        columns_dict = {}
+        M = 3
+        values = M * 100
+        x = values
         for key in self._nodes:
             columns_dict[key] = values
-            rows.append(key)
-        df = pd.DataFrame(columns_dict, index=rows, dtype=float)
-        np.fill_diagonal(df.values, 0)
-        #print(df)
-        return df
+        dict = {ver: {col: x for col in columns_dict} for ver in columns_dict}
+
+        for i in dict:
+            for j in dict[i]:
+                if i != j:
+                    dict[i][j] = values
+                else:
+                    dict[i][j] = 0
+        print(dict)
+        # df = pd.DataFrame(dict, index=columns_dict, dtype=float)
+        # np.fill_diagonal(df.values, 0)
+        # print(df)
+        return dict
 
     def traffic_matrix_management(self, traffic_matrix):
         # creates and manages the connections given a traffic matrix
-        list_of_nodes = list(traffic_matrix.iloc[:0])
+        # list_of_nodes = list(traffic_matrix.iloc[:0])
+        list_of_nodes = []
+        for nodes in self._nodes:
+            list_of_nodes.append(nodes)
+
         flag = 0
         while flag == 0:
             inp, out = random.sample(list_of_nodes, 2)
-            x = traffic_matrix.at[inp, out]
+            x = traffic_matrix[inp][out]
             if x == 0:
                 flag = 0
                 values = []
-                for x in list_of_nodes:
-                    values.append((traffic_matrix[x] == 0).all())
-                flag_control_1 = all(values)
+                for x in traffic_matrix.values():
+                    for y in x.values():
+                        values.append(y)
+                flag_control_1 = all(val == 0 for val in values)
+
                 if flag_control_1 == True:
                     break
             else:
@@ -608,11 +622,11 @@ class Network:
                     x = temporary[0]
                     strategy = self._nodes[x].transceiver
                     bit_rate = self.calculate_bit_rate(light_path, temporary, strategy)
-                    x = trf_mtrx.at[input, output]
+                    x = trf_mtrx[input][output]
                     new_value = x - bit_rate
                     if new_value < 0:
                         new_value = 0
-                    trf_mtrx.at[temp.input, temp.output] = new_value
+                    trf_mtrx[temp.input][temp.output] = new_value
                     # print('the bit rate is ' + str(bit_rate))
                     #print(trf_mtrx)
                     # print('the bit rate is ' + str(bit_rate))
@@ -649,19 +663,19 @@ class Network:
 
                     list_of_snr.append(temp.snr)
                     list_of_bit_rate.append(temp.bit_rate)
-                    #if flag_control == True:
-                        #snr_distribution_hist.snr_hist(list_of_snr)
-                        #BitRateHist.bit_rate_hist(list_of_bit_rate)
-                        #print(trf_mtrx)
+                    if flag_control == True:
+                        snr_distribution_hist.snr_hist(list_of_snr)
+                        BitRateHist.bit_rate_hist(list_of_bit_rate)
+                        print(trf_mtrx)
 
                 elif k >= len(possible_paths):
                     print('non riesco ad allocare il traffico')
                     flag_control = True
                     temp.snr = 0
                     temp.latency = None
-                    #print(trf_mtrx)
-                    #snr_distribution_hist.snr_hist(list_of_snr)
-                    #BitRateHist.bit_rate_hist(list_of_bit_rate)
+                    print(trf_mtrx)
+                    snr_distribution_hist.snr_hist(list_of_snr)
+                    BitRateHist.bit_rate_hist(list_of_bit_rate)
             return list_of_snr
 
 

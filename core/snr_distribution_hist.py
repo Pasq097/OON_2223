@@ -6,5 +6,5 @@ def snr_hist(list_snr):
     plt.xlabel('SNR [dB]', fontweight='bold')
     plt.ylabel('occurrences', fontweight='bold')
     plt.title("SNR distribution")
-    plt.hist(res, bins=12)
+    plt.hist(res, bins=18)
     plt.show()

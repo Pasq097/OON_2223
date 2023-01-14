@@ -6,7 +6,7 @@ weighted_paths.connect()
 weighted_paths.draw()
 # create a list of instances of the class connections over 100 connected nodes (100 different nodes couples)
 # choose a random input node and a random output node
-sel = 'latency'
+sel = 'snr'
 weighted_paths.stream(sel)
 
 if sel == 'snr':

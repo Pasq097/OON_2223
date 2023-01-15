@@ -24,6 +24,3 @@ else:
     weighted_paths.update_route_space()
     print(weighted_paths.route_space)
     list_of_ch_allocated = CapacityAllocated.total_capacity_allocated(weighted_paths.route_space)
-
-
-

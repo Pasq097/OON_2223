@@ -12,7 +12,7 @@ def checking_ch(dict, nodes_swm, dict_nodes, path_of_cu_iter):
     blocks = []
     # print(path_of_cu_iter)
     if nodes_swm == '':
-        for k in range(0, 10):
+        for k in range(0, 6):
             a = [item[k] for item in list_of_channels]
             if all(ele == a[0] and ele == 1 for ele in a):
                 flag = 1
@@ -26,7 +26,7 @@ def checking_ch(dict, nodes_swm, dict_nodes, path_of_cu_iter):
             block = (dict_nodes[swm].switching_matrix[path_of_cu_iter[index_swm - 1]][path_of_cu_iter[index_swm + 1]])
             blocks.append(block)
         # print(blocks)
-        for k in range(0, 10):
+        for k in range(0, 6):
             a = [item[k] for item in list_of_channels]
             b = [item[k] for item in blocks]
             # print(a)

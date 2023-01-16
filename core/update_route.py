@@ -3,7 +3,7 @@ import numpy as np
 
 def update_route(path, lines, nodes):
     # This function rebuild all the route space from scratch
-    result = np.ones(10, dtype=int)
+    result = np.ones(6, dtype=int)
     state = []
     blocks = []
     lines_of_path = [''.join(pair) for pair in zip(path[:-1], path[1:])]

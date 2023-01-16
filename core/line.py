@@ -9,7 +9,7 @@ class Line:
     def __init__(self, label, length):  # Constructor
         self._label = label
         self._length = length
-        self._state = np.ones(10, dtype=int)  # self._state = ["channel x Hz is free/occupied", x10]
+        self._state = np.ones(6, dtype=int)  # self._state = ["channel x Hz is free/occupied", x10]
         self._successive = {}  # each signal when start propagating needs to stay on the same channel
         # 'till the destination
         self._n_amplifiers = None       # Calculate this number with the line length, one amplifier for 80 km
@@ -82,7 +82,7 @@ class Line:
     def nli_generation(self, R_s, delta_f, P_ch, n_span):
         # in linear units
         pi = math.pi
-        N_ch = 10                           # number of channels
+        N_ch = 6                           # number of channels
         alpha_lin = self._alpha_dB/(20 * math.log10(math.e))
         L_eff = 1 / (2 * alpha_lin)
         B_n = 12.5 * 10**9

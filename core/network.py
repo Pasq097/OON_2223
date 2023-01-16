@@ -61,7 +61,7 @@ class Network:
                 lines.append(line.Line(edge, var))
         self._lines = {k: v for k, v in zip(edge, lines)}
 
-        with open(r'C:\Users\Pac\OON_2223\resources\nodes_full_flex_rate.json') as file:
+        with open(r'C:\Users\Pac\OON_2223\resources\full_network.json') as file:
             self._dictionary_2 = json.load(file)
             k = 0
             x_values = []
@@ -101,8 +101,15 @@ class Network:
             a = self._dictionary_2[key]['switching_matrix']
             self._switching_matrices[key] = a
         self._strategy = []
-        for key in self._dictionary_2:
+        if "transceiver" in self._dictionary_2:
             self._strategy.append(self._dictionary_2[key]['transceiver'])
+        else:
+            self._strategy.append('fixed_rate')
+
+        number_of_channels = self._dictionary_2['A']['switching_matrix']
+        self.n_ch = len(number_of_channels['B']['B'])
+
+
 
     @property
     def dictionary_2(self):
@@ -199,13 +206,13 @@ class Network:
             for temp in self._nodes[key].connected_nodes:
                 con_nod.append(temp)
 
-            x = np.ones(10, dtype=int)
+            x = np.ones(6, dtype=int)
             dict_of_node = {ver: {col: x for col in con_nod} for ver in con_nod}
 
             for i in dict_of_node:
                 for j in dict_of_node[i]:
                     if i == j:
-                        dict_of_node[i][j] = np.zeros(10, dtype=int)
+                        dict_of_node[i][j] = np.zeros(6, dtype=int)
             # print(dict_of_node)
             self._nodes[key].switching_matrix = dict_of_node
 
@@ -259,7 +266,7 @@ class Network:
         # print(self._df)                               ##############################
 
         dict_03 = {}
-        for i in range(0, 10):
+        for i in range(0, self.n_ch):
             dict_03[i] = 1
         self._route_space = pd.DataFrame(dict_03, index=res)
         # print(self._route_space)                       #######################################
@@ -366,14 +373,14 @@ class Network:
             signal_to_noise_ratio.append(y)
         dict_01 = {}
         if sel == 'latency':
-            for i in range(0, 10):
+            for i in range(0, self.n_ch):
                 dict_01[i + 1] = total_accumulated_latency
             pd.set_option('display.max_rows', None)
             df_latency = pd.DataFrame(dict_01, index=res, dtype=float)
             return df_latency
         elif sel == 'snr':
             dict_02 = {}
-            for i in range(0, 10):
+            for i in range(0, self.n_ch):
                 dict_02[i + 1] = signal_to_noise_ratio
             pd.set_option('display.max_rows', None)
             df_snr = pd.DataFrame(dict_02, index=res, dtype=float)
@@ -383,7 +390,7 @@ class Network:
         path_to_search = '->'.join(path)
         df = self.probe('snr')
         var = list(df.loc[path_to_search])
-        var_lin = 10 ** (var[0] / 10)
+        var_lin = 10 ** (var[0] / self.n_ch)
         R_s = light_path.Rs
         # R_s = 32 * 10 ** 9  # GHz
         B_n = 12.5 * 10 ** 9  # GHz
@@ -470,14 +477,14 @@ class Network:
 
         return inp, out, flag_control_1
 
-    def reset_of_the_ch(self):
-        for line_obj in self._lines:
-            self._lines[line_obj]._state = np.ones(10, dtype=int)
+    # def reset_of_the_ch(self):
+    #     for line_obj in self._lines:
+    #         self._lines[line_obj]._state = np.ones(10, dtype=int)
 
-    def reset_route_space(self):
-        for i in range(0, 350):
-            pd.set_option('display.max_rows', None)
-            self._route_space.iloc[i] = 1
+    # def reset_route_space(self):
+    #     for i in range(0, 350):
+    #         pd.set_option('display.max_rows', None)
+    #         self._route_space.iloc[i] = 1
 
     def stream(self, selection='snr'):
         # Route space has to be a pandas dataframe that for all the possible paths describe the availability for each CH
@@ -489,8 +496,8 @@ class Network:
         # Note that one signal from root->target need to be transmitted on the same CH for each line
         flag_control = False
         trf_mtrx = self.creation_of_random_traffic_matrix()
-        self.reset_of_the_ch()
-        self.reset_route_space()
+        # self.reset_of_the_ch()
+        # self.reset_route_space()
         if selection == 'latency':
             list_of_latency = []
             list_of_bit_rate = []
@@ -559,7 +566,7 @@ class Network:
                         block[the_ch_is] = 0
                         if the_ch_is == 0:
                             block[the_ch_is + 1] = 0
-                        elif the_ch_is == 9:
+                        elif the_ch_is == self.n_ch - 1:
                             block[the_ch_is - 1] = 0
                         else:
                             block[the_ch_is + 1] = 0
@@ -578,7 +585,7 @@ class Network:
                         BitRateHist.bit_rate_hist(list_of_bit_rate)
 
                 elif k >= len(possible_paths):
-                    print('non riesco ad allocare il traffico')
+                    # print('non riesco ad allocare il traffico')
                     flag_control = True
                     temp.snr = 0
                     temp.latency = None
@@ -655,7 +662,7 @@ class Network:
                         block[the_ch_is] = 0
                         if the_ch_is == 0:
                             block[the_ch_is + 1] = 0
-                        elif the_ch_is == 9:
+                        elif the_ch_is == self.n_ch - 1:
                             block[the_ch_is - 1] = 0
                         else:
                             block[the_ch_is + 1] = 0
@@ -668,25 +675,12 @@ class Network:
                     temp.latency = light_path.latency
                     list_of_snr.append(temp.snr)
                     list_of_bit_rate.append(temp.bit_rate)
-                    if flag_control == True:
-                        trf_mtrx_in = self.creation_of_random_traffic_matrix()
-                        # DataAllocatedPerLink.allocation_per_link(trf_mtrx_in, trf_mtrx)
-                        # snr_distribution_hist.snr_hist(list_of_snr)
-                        # BitRateHist.bit_rate_hist(list_of_bit_rate)
-                        # print(trf_mtrx)
 
                 elif k >= len(possible_paths):
-
-                    print('non riesco ad allocare il traffico')
-
+                    # print('non riesco ad allocare il traffico')
                     flag_control = True
                     temp.snr = 0
                     temp.latency = None
-                    # print(trf_mtrx)
-                    trf_mtrx_in = self.creation_of_random_traffic_matrix()
-                    # DataAllocatedPerLink.allocation_per_link(trf_mtrx_in, trf_mtrx)
-                    # snr_distribution_hist.snr_hist(list_of_snr)
-                    # BitRateHist.bit_rate_hist(list_of_bit_rate)
 
             return list_of_snr, list_of_bit_rate, trf_mtrx
 
@@ -701,6 +695,8 @@ class Network:
         for pat in all_paths:
             result_f = update_route.update_route(pat, self._lines, self._nodes)
             result_l.append(result_f)
-        for i in range(0, 350):
+        for i in range(0, 96):
             pd.set_option('display.max_rows', None)
             self._route_space.iloc[i] = result_l[i]
+
+        return self._route_space

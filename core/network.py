@@ -104,7 +104,7 @@ class Network:
         if "transceiver" in self._dictionary_2:
             self._strategy.append(self._dictionary_2[key]['transceiver'])
         else:
-            self._strategy.append('fixed_rate')
+            self._strategy.append('flex_rate')
 
         number_of_channels = self._dictionary_2['A']['switching_matrix']
         self.n_ch = len(number_of_channels['B']['B'])
@@ -431,7 +431,7 @@ class Network:
     def creation_of_random_traffic_matrix(self):
 
         columns_dict = {}
-        M = 25
+        M = 18
         values = M * 100
         x = values
         for key in self._nodes:

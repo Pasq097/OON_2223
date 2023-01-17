@@ -12,7 +12,7 @@ weighted_paths.connect()
 weighted_paths.draw()
 
 sel = 'snr'
-MC_runs = 2
+MC_runs = 50
 list_snr_tot = []
 list_bit_rate_tot = []
 list_of_trf_mtrx = []
@@ -73,7 +73,7 @@ CapacityAllocated.total_capacity_allocated(route_space_lists)
 
 plt.title("SNR MONTE CARLO")
 plt.ylabel('occurrences', fontweight='bold')
-plt.xlabel('SNR avarage ', fontweight='bold')
+plt.xlabel('SNR avarage [dB] ', fontweight='bold')
 plt.hist(list_snr_tot, bins=30)
 # plt.axvline(bit_rate_avg, color='k', linestyle='dashed', linewidth=1)
 plt.show()

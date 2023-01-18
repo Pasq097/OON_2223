@@ -14,9 +14,7 @@ import LightPath
 import update_route
 import scipy.special as scipy
 import BitRateHist
-import snr_distribution_hist
 import LatencyDistribution
-import DataAllocatedPerLink
 
 
 class Network:
@@ -428,10 +426,10 @@ class Network:
             R_b = (2 * R_s * math.log2(1 + var_lin * (R_s / B_n))) / (10 ** 9)
         return R_b
 
-    def creation_of_random_traffic_matrix(self):
+    def creation_of_random_traffic_matrix(self, M=1):
 
         columns_dict = {}
-        M = 18
+
         values = M * 100
         x = values
         for key in self._nodes:
@@ -449,6 +447,7 @@ class Network:
         # np.fill_diagonal(df.values, 0)
         # print(df)
         return dict
+
 
     def traffic_matrix_management(self, traffic_matrix):
         # creates and manages the connections given a traffic matrix
@@ -486,7 +485,7 @@ class Network:
     #         pd.set_option('display.max_rows', None)
     #         self._route_space.iloc[i] = 1
 
-    def stream(self, selection='snr'):
+    def stream(self, selection='snr', M=1):
         # Route space has to be a pandas dataframe that for all the possible paths describe the availability for each CH
         #         1    2    3     4     5  ... 10
         # A->B    0    0    1     0     1  ... 1
@@ -495,7 +494,8 @@ class Network:
         # How to find out if the CH of a specific path is free or not?
         # Note that one signal from root->target need to be transmitted on the same CH for each line
         flag_control = False
-        trf_mtrx = self.creation_of_random_traffic_matrix()
+        trf_mtrx = self.creation_of_random_traffic_matrix(M)
+
         # self.reset_of_the_ch()
         # self.reset_route_space()
         if selection == 'latency':
@@ -596,7 +596,13 @@ class Network:
         elif selection == 'snr':
             list_of_snr = []
             list_of_bit_rate = []
-
+            blocked_connections = 0
+            nodes = []
+            blk = 0
+            soglia = 0
+            for n in self._nodes.keys():
+                nodes.append(n)
+            all_possible_connections = [x + y for x,y in itertools.permutations(nodes, 2)]
             # print(trf_mtrx)
             while flag_control == False:
                 values = self.traffic_matrix_management(trf_mtrx)
@@ -630,6 +636,7 @@ class Network:
                     # print('path' + the_path_is)
                     # print('ch'+str(the_ch_is))
                     signal_power = temp.signal_power
+                    #print(the_path_is)
                     light_path = LightPath.LightPath(signal_power, the_path_is, the_ch_is)
                     x = temporary[0]
                     strategy = self._nodes[x].transceiver
@@ -678,11 +685,17 @@ class Network:
 
                 elif k >= len(possible_paths):
                     # print('non riesco ad allocare il traffico')
-                    flag_control = True
+                    the_path_is = list(the_path_is)
+                    for c in all_possible_connections:
+                        if c[0] == the_path_is[0] and c[-1] == the_path_is[1]:
+                            all_possible_connections.remove(c)
+                            blk = blk + 1
+                    if soglia > 300:
+                        flag_control = True
                     temp.snr = 0
                     temp.latency = None
-
-            return list_of_snr, list_of_bit_rate, trf_mtrx
+                    soglia = soglia + 1
+            return list_of_snr, list_of_bit_rate, trf_mtrx, blk
 
     def update_route_space(self):
 

@@ -1,31 +1,47 @@
-import plotly.graph_objects as go
+import plotly.graph_objs as go
+from plotly.subplots import make_subplots
 
-def allocation_per_link_animated(mtrx_start, mtrx_fin):
-    res = []
-    for mtrx in mtrx_fin:
-        result = {}
-        for key, value in mtrx_start.items():
-            result[key] = {}
-            for sub_key, sub_value in value.items():
-                result[key][sub_key] = mtrx_start[key][sub_key] - mtrx[key][sub_key]
-        res.append(result)
-    new_dictionary_2 = [{str((k, k1)): v1 for k, v in d.items() for k1, v1 in v.items()} for d in res]
-    new_dictionary = {str((k, k1)): v1 for k, v in mtrx_start.items() for k1, v1 in v.items()}
-    print(new_dictionary)
-    print(new_dictionary_2)
-    print(len(new_dictionary_2))
-    frames = [go.Frame(
-        data=[go.Bar(x=list(new_dictionary_2.keys()), y=list(new_dictionary_2.values()), name='mtrx_start'),
-              go.Bar(x=list(new_dictionary.keys()), y=list(new_dictionary.values()), name='mtrx_fin')])]
 
-    fig = go.Figure(data=[go.Bar(x=list(new_dictionary_2.keys()), y=list(new_dictionary_2.values()), name='mtrx_start'),
-                          go.Bar(x=list(new_dictionary.keys()), y=list(new_dictionary.values()), name='result')],
-                    layout=go.Layout(updatemenus=[
-                        dict(type='buttons', showactive=False, buttons=[dict(label='Play', method='animate',
-                                                                             args=[None, {'frame': {'duration': 200,
-                                                                                                    'redraw': True},
-                                                                                          'fromcurrent': True,
-                                                                                          'transition': {
-                                                                                              'duration': 200}}])])]))
+def total_capacity_allocated(route_space):
+    # search all the two nodes paths
+    res = list(route_space[0].index)
+    zeros_list = []
+    list_of_path = []
+    for a in res:
+        if len(a) == 4:
+            list_of_path.append(a)
+
+    for df in route_space:
+        zeros_count = [df.loc[path].eq(0).sum() for path in list_of_path]
+        zeros_list.append(zeros_count)
+
+
+
+    # Create a subplot with one x-axis and one y-axis
+    fig = make_subplots(rows=1, cols=1)
+
+    # Add a bar trace to the subplot
+    fig.add_trace(go.Bar(x=list_of_path, y=zeros_list[0], name="Frame 1"))
+
+    # Update the layout to include a title and axis labels
+    fig.update_layout(title='Total capacity allocated into the network',
+                      yaxis_title='Total channels allocated',
+                      xaxis_title='Line')
+
+    # Create a list of frames for the animation
+    frames = [go.Frame(data=[go.Bar(x=list_of_path, y=zeros_list[i], name="Frame {}".format(i + 1))]) for i in
+              range(1, len(zeros_list))]
+
+    # Add the frames to the figure
     fig.frames = frames
+
+    # Define the animation settings
+    animation_settings = dict(frame=dict(duration=500, redraw=True), fromcurrent=True)
+
+    # Update the layout to include the animation settings
+    fig.update_layout(updatemenus=[dict(type='buttons', showactive=False, buttons=[dict(label='Play',
+                                                                                        method='animate', args=[None,
+                                                                                                                animation_settings])])])
+
+    # Show the figure
     fig.show()

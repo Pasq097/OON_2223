@@ -1,11 +1,10 @@
 import matplotlib.pyplot as plt
 
 
-def block_conn(x, y):
-    x_axis = list(range(x+1))
-    print(x_axis)
-    plt.plot(x_axis[:x], y[:x], 'bo')
-    average = sum(y[x:]/len(y[x:]))
-    plt.plot(x_axis[x:], [average for i in x_axis[x:]], 'ro')
-
+def block_conn(M, y):
+    x = M
+    x_axis = list(range(x + 1))
+    average = sum(y[x:]) / len(y[x:])
+    y_axis = y[:x] + [average for i in range(x, len(x_axis))]
+    plt.plot(x_axis, y_axis)
     plt.show()

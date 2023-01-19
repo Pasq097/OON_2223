@@ -14,7 +14,7 @@ weighted_paths.connect()
 weighted_paths.draw()
 
 sel = 'snr'
-MC_runs = 50
+MC_runs = 30
 M = 1
 soglia_M = 20
 list_snr_tot = []
@@ -25,7 +25,7 @@ all_blocked_connections = []
 i = 0
 if sel == 'snr':
     for i in range(MC_runs):
-        # print(MC_runs-i)
+        print(MC_runs-i)
         weighted_paths = network.Network()
         weighted_paths.connect()
         var = weighted_paths.stream(sel, M)
@@ -46,7 +46,6 @@ if sel == 'snr':
         weighted_paths.n_amplifiers_calc_lines()
         # list_of_ch_allocated = CapacityAllocated.total_capacity_allocated(weighted_paths.route_space)
         # print(list_snr_tot)
-        print(all_blocked_connections)
         i = i+1
         if i <= soglia_M:
             M = M + 1
@@ -73,7 +72,7 @@ trf_in = weighted_paths.creation_of_random_traffic_matrix(M)
 
 graph = DataAllocatedPerLink.allocation_per_link(trf_in, list_of_trf_mtrx)
 graph.show()
-
+chart2.total_capacity_allocated(route_space_lists)
 BlockedConnectionsGraph.block_conn(soglia_M, all_blocked_connections)
 
 graph2 = BitRateHist.bit_rate_hist(list_bit_rate_avg)
@@ -82,7 +81,7 @@ graph2.show()
 CapacityAllocated.total_capacity_allocated(route_space_lists)
 
 # chart.animated_chart(list_snr_tot)
-# chart2.allocation_per_link_animated(trf_in, list_of_trf_mtrx)
+
 
 plt.title("SNR MONTE CARLO")
 plt.ylabel('occurrences', fontweight='bold')

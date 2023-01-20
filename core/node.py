@@ -1,4 +1,4 @@
-import line
+from core import line
 
 class Node:
     """Model the nodes"""

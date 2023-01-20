@@ -1,5 +1,5 @@
-import Signal_Information
-import network
+from core import Signal_Information
+from core import network
 import itertools
 import pandas as pd
 import math

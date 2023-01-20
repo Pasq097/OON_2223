@@ -1,5 +1,5 @@
-import network
-import CapacityAllocated
+from core import network
+from Functions_charts import CapacityAllocated
 
 weighted_paths = network.Network()
 weighted_paths.connect()

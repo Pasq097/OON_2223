@@ -1,7 +1,3 @@
-import plotly.graph_objs as go
-from plotly.subplots import make_subplots
-
-
 def total_capacity_allocated(route_space):
     # search all the two nodes paths
     res = list(route_space[0].index)
@@ -15,7 +11,8 @@ def total_capacity_allocated(route_space):
         zeros_count = [df.loc[path].eq(0).sum() for path in list_of_path]
         zeros_list.append(zeros_count)
 
-
+    import plotly.graph_objs as go
+    from plotly.subplots import make_subplots
 
     # Create a subplot with one x-axis and one y-axis
     fig = make_subplots(rows=1, cols=1)
@@ -26,11 +23,14 @@ def total_capacity_allocated(route_space):
     # Update the layout to include a title and axis labels
     fig.update_layout(title='Total capacity allocated into the network',
                       yaxis_title='Total channels allocated',
-                      xaxis_title='Line')
+                      xaxis_title='Line',
+                      annotations=[dict(text="Frame 1", x=1, y=1, xref='paper', yref='paper', showarrow=False)])
 
     # Create a list of frames for the animation
-    frames = [go.Frame(data=[go.Bar(x=list_of_path, y=zeros_list[i], name="Frame {}".format(i + 1))]) for i in
-              range(1, len(zeros_list))]
+    frames = [go.Frame(data=[go.Bar(x=list_of_path, y=zeros_list[i], name="Frame {}".format(i + 1))],
+                       layout=dict(annotations=[
+                           dict(text="Frame {}".format(i + 1), x=1, y=1, xref='paper', yref='paper', showarrow=False)]))
+              for i in range(1, len(zeros_list))]
 
     # Add the frames to the figure
     fig.frames = frames

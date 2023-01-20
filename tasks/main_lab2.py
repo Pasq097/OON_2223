@@ -1,10 +1,10 @@
 # set the dataframe of main as an attribute of the network 'weighted_paths'
-import network
+from core import network
 import random
-import connection
+from core import connection
 import matplotlib.pyplot as plt
 from statistics import mean
-import CapacityAllocated
+from Functions_charts import CapacityAllocated
 
 N_CONNECTIONS = 500
 weighted_paths = network.Network()

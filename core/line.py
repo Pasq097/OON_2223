@@ -1,6 +1,6 @@
 import numpy as np
 import math
-import LightPath
+from core import LightPath
 
 
 class Line:

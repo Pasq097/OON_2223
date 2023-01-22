@@ -683,7 +683,7 @@ class Network:
         for pat in all_paths:
             result_f = update_route.update_route(pat, self._lines, self._nodes)
             result_l.append(result_f)
-        for i in range(0, 96):
+        for i in range(0, len(all_paths)):
             pd.set_option('display.max_rows', None)
             self._route_space.iloc[i] = result_l[i]
 

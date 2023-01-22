@@ -1,3 +1,7 @@
+import plotly.graph_objs as go
+from plotly.subplots import make_subplots
+
+
 def total_capacity_allocated(route_space):
     # search all the two nodes paths
     res = list(route_space[0].index)
@@ -10,9 +14,6 @@ def total_capacity_allocated(route_space):
     for df in route_space:
         zeros_count = [df.loc[path].eq(0).sum() for path in list_of_path]
         zeros_list.append(zeros_count)
-
-    import plotly.graph_objs as go
-    from plotly.subplots import make_subplots
 
     # Create a subplot with one x-axis and one y-axis
     fig = make_subplots(rows=1, cols=1)

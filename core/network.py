@@ -19,39 +19,39 @@ class Network:
         self._lines = {}  # il dizionario ha come key il nome della linea AB,BF etc e come value l'istanza della linea
         self._route_space = None
         self._df = None
-        with open('../resources/nodes.json', 'r') as file:
-            self._dictionary = json.load(file)
-            k = 0
-            x_values = []
-            y_values = []
-            labels = list(self._dictionary.keys())
-            nodes = list(self._dictionary.keys())
-            for _ in self._dictionary.keys():
-                values = self._dictionary[nodes[k]]
-                nodes[k] = node.Node(nodes[k], values["position"], values["connected_nodes"])
-                k = k + 1
-        self._nodes = {k: v for k, v in zip(labels, nodes)}
-        obj = list(self._nodes.values())
-        edge = []
-
-        for nodo in self._nodes.keys():
-            for p in self._nodes[nodo].connected_nodes:
-                edge.append(nodo + p)
-
-        distances = []
-        temp = []
-        for nodo in self._nodes.values():
-            q = nodo.position
-            temp = nodo.connected_nodes
-            for temporary in range(0, len(temp)):
-                w = self._nodes[temp[temporary]].position
-                distance = ((q[0] - w[0]) ** 2 + (q[1] - w[1]) ** 2) ** 0.5
-                distances.append(distance)
-        lines = []
-        for _ in edge:
-            for var in distances:
-                lines.append(line.Line(edge, var))
-        self._lines = {k: v for k, v in zip(edge, lines)}
+        # with open('../resources/nodes.json', 'r') as file:
+        #     self._dictionary = json.load(file)
+        #     k = 0
+        #     x_values = []
+        #     y_values = []
+        #     labels = list(self._dictionary.keys())
+        #     nodes = list(self._dictionary.keys())
+        #     for _ in self._dictionary.keys():
+        #         values = self._dictionary[nodes[k]]
+        #         nodes[k] = node.Node(nodes[k], values["position"], values["connected_nodes"])
+        #         k = k + 1
+        # self._nodes = {k: v for k, v in zip(labels, nodes)}
+        # obj = list(self._nodes.values())
+        # edge = []
+        #
+        # for nodo in self._nodes.keys():
+        #     for p in self._nodes[nodo].connected_nodes:
+        #         edge.append(nodo + p)
+        #
+        # distances = []
+        # temp = []
+        # for nodo in self._nodes.values():
+        #     q = nodo.position
+        #     temp = nodo.connected_nodes
+        #     for temporary in range(0, len(temp)):
+        #         w = self._nodes[temp[temporary]].position
+        #         distance = ((q[0] - w[0]) ** 2 + (q[1] - w[1]) ** 2) ** 0.5
+        #         distances.append(distance)
+        # lines = []
+        # for _ in edge:
+        #     for var in distances:
+        #         lines.append(line.Line(edge, var))
+        # self._lines = {k: v for k, v in zip(edge, lines)}
 
         with open(r'C:\Users\Pac\OON_2223\resources\full_network.json') as file:
             self._dictionary_2 = json.load(file)
@@ -484,6 +484,7 @@ class Network:
             list_of_latency = []
             list_of_bit_rate = []
             blocked_connections = 0
+            requested_connections = 0
             nodes = []
             blk = 0
             soglia = 0
@@ -496,6 +497,7 @@ class Network:
                 input = values[0]
                 output = values[1]
                 temp = connection.Connection(input, output, 1e-3)
+                requested_connections = requested_connections + 1
                 flag_control = values[2]
                 possible_paths = self.find_best_latency(input, output)
                 k = 0
@@ -574,12 +576,13 @@ class Network:
                     temp.latency = None
                     soglia = soglia + 1
 
-            return list_of_latency, list_of_bit_rate, trf_mtrx, blk
+            return list_of_latency, list_of_bit_rate, trf_mtrx, blk, requested_connections
 
         elif selection == 'snr':
             list_of_snr = []
             list_of_bit_rate = []
             blocked_connections = 0
+            requested_connections = 0
             nodes = []
             blk = 0
             soglia = 0
@@ -592,6 +595,7 @@ class Network:
                 input = values[0]
                 output = values[1]
                 temp = connection.Connection(input, output, 1e-3)
+                requested_connections = requested_connections + 1
                 flag_control = values[2]
                 possible_paths = self.find_best_snr(input, output)
                 k = 0
@@ -670,7 +674,7 @@ class Network:
                     temp.snr = 0
                     temp.latency = None
                     soglia = soglia + 1
-            return list_of_snr, list_of_bit_rate, trf_mtrx, blk
+            return list_of_snr, list_of_bit_rate, trf_mtrx, blk, requested_connections
 
     def update_route_space(self):
 

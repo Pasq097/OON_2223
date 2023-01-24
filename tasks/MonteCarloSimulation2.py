@@ -1,7 +1,7 @@
 from core import network
 from Functions_charts import BitRateHist, BlockedConnectionsGraph, CapacityAllocated, DataAllocatedPerLink, chart2, \
-    snrMC, LatencyDistribution
-
+    snrMC, LatencyDistribution, BlockingRatio
+import matplotlib as plt
 # Network congestion
 # For a given value of M, fixed number of Monte Carlo runs. For each run collect the metrics of interest
 weighted_paths = network.Network()
@@ -9,9 +9,9 @@ weighted_paths.connect()
 weighted_paths.draw()
 # parameters
 sel = 'snr'
-MC_runs = 300
+MC_runs = 100
 M = 1
-threshold_M = 30
+threshold_M = 20
 # initialize
 list_snr_tot = []
 list_latency_tot = []
@@ -19,6 +19,7 @@ list_bit_rate_tot = []
 list_of_trf_mtrx = []
 route_space_lists = []
 all_blocked_connections = []
+all_connections_req = []
 list_of_avg = []
 i = 0
 # MC loop
@@ -34,6 +35,8 @@ if sel == 'snr':
         b = var[1]
         c = var[2]
         d = var[3]
+        e = var[4]
+        all_connections_req.append(e)
         all_blocked_connections.append(d)
         list_of_trf_mtrx.append(c)
         list_bit_rate_tot.append(b)
@@ -44,10 +47,18 @@ if sel == 'snr':
             M = M + 1
     # graph1
     trf_in = weighted_paths.creation_of_random_traffic_matrix(M)
+    #print(trf_in)
     graph = DataAllocatedPerLink.allocation_per_link(trf_in, list_of_trf_mtrx)
     graph.show()
     # graph2
     BlockedConnectionsGraph.block_conn(threshold_M, all_blocked_connections)
+
+    # graph
+
+    graph0 = BlockingRatio.blocking_ratio_hist(all_blocked_connections,all_connections_req, threshold_M)
+
+    graph0.show()
+
     # graph3
     graph2 = BitRateHist.bit_rate_hist(list_bit_rate_tot)
     graph2.show()

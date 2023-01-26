@@ -11,7 +11,7 @@ weighted_paths.connect()
 weighted_paths.draw()
 # parameters
 sel = 'snr'
-MC_runs = 30
+MC_runs = 100
 M = 20
 # initialize
 
@@ -70,6 +70,6 @@ for sublist in result:
                     total += nested_value
     averages.append(total / len(sublist))
 print(averages)
-with open('averages7_2.pickle', 'wb') as f:
+with open('averages2_2.pickle', 'wb') as f:
     pickle.dump(averages, f)
 

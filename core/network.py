@@ -433,23 +433,28 @@ class Network:
                     dict[i][j] = 0
         return dict
 
-    def traffic_matrix_management(self, traffic_matrix, all_possible_connections):
+    def traffic_matrix_management(self, traffic_matrix, all_possible_connections, blocking_ratio, th):
         # creates and manages the connections given a traffic matrix
         flag = 0
+        flag_control_1 = False
         while flag == 0:
+            #print('ciao3')
             conn = random.sample(all_possible_connections, 1)
+            #print(all_possible_connections)
             inp, out = conn[0][0], conn[0][1]
             x = traffic_matrix[inp][out]
-            if x == 0:
+            #print(inp+out)
+
+            if x == 0 :
                 flag = 0
                 values = []
                 for x in traffic_matrix.values():
                     for y in x.values():
                         values.append(y)
                 flag_control_1 = all(val == 0 for val in values)
+            if flag_control_1 == True:
+                break
 
-                if flag_control_1 == True:
-                    break
             else:
                 flag = 1
                 flag_control_1 = False
@@ -591,7 +596,8 @@ class Network:
             all_possible_connections = [x + y for x, y in itertools.permutations(nodes, 2)]
             # print(trf_mtrx)
             while flag_control == False and blocking_ratio < th:
-                values = self.traffic_matrix_management(trf_mtrx, all_possible_connections)
+
+                values = self.traffic_matrix_management(trf_mtrx, all_possible_connections,blocking_ratio,th=0.3)
                 input = values[0]
                 output = values[1]
                 temp = connection.Connection(input, output, 1e-3)
@@ -617,6 +623,7 @@ class Network:
                     else:
                         k = k + 1
                 if k < len(possible_paths):
+
                     # print('path' + the_path_is)
                     # print('ch'+str(the_ch_is))
                     signal_power = temp.signal_power
@@ -664,7 +671,7 @@ class Network:
                     list_of_snr.append(temp.snr)
                     list_of_bit_rate.append(temp.bit_rate)
                 elif k >= len(possible_paths):
-                    print('non riesco ad allocare il traffico')
+                    #print('non riesco ad allocare il traffico')
                     the_path_is = list(the_path_is)
                     for c in all_possible_connections:
                         if c[0] == the_path_is[0] and c[-1] == the_path_is[-1]:

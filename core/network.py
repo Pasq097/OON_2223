@@ -96,7 +96,7 @@ class Network:
         if "transceiver" in self._dictionary_2:
             self._strategy.append(self._dictionary_2[key]['transceiver'])
         else:
-            self._strategy.append('shannon')
+            self._strategy.append('flex_rate')
 
         number_of_channels = self._dictionary_2['A']['switching_matrix']
         self.n_ch = len(number_of_channels['B']['B'])
@@ -433,15 +433,12 @@ class Network:
                     dict[i][j] = 0
         return dict
 
-    def traffic_matrix_management(self, traffic_matrix, blocking_ratio, th):
+    def traffic_matrix_management(self, traffic_matrix, all_possible_connections):
         # creates and manages the connections given a traffic matrix
-        # list_of_nodes = list(traffic_matrix.iloc[:0])
-        list_of_nodes = []
-        for nodes in self._nodes:
-            list_of_nodes.append(nodes)
         flag = 0
         while flag == 0:
-            inp, out = random.sample(list_of_nodes, 2)
+            conn = random.sample(all_possible_connections, 1)
+            inp, out = conn[0][0], conn[0][1]
             x = traffic_matrix[inp][out]
             if x == 0:
                 flag = 0
@@ -451,7 +448,7 @@ class Network:
                         values.append(y)
                 flag_control_1 = all(val == 0 for val in values)
 
-                if flag_control_1 == True or blocking_ratio > th:
+                if flag_control_1 == True:
                     break
             else:
                 flag = 1
@@ -468,7 +465,7 @@ class Network:
     #         pd.set_option('display.max_rows', None)
     #         self._route_space.iloc[i] = 1
 
-    def stream(self, selection='snr', M=1, th=1):
+    def stream(self, selection='snr', M=1, th=0.3):
         # Route space has to be a pandas dataframe that for all the possible paths describe the availability for each CH
         #         1    2    3     4     5  ... 10
         # A->B    0    0    1     0     1  ... 1
@@ -485,6 +482,7 @@ class Network:
             list_of_bit_rate = []
             blocked_connections = 0
             requested_connections = 0
+            established_conn = 0
             nodes = []
             blk = 0
             soglia = 0
@@ -540,6 +538,8 @@ class Network:
                         print('the connection over this path is rejected')
                         break
                     self.propagate(light_path)
+                    established_conn = established_conn + 1
+                    print(established_conn)
                     lines_to_use = [''.join(pair) for pair in zip(the_path_is[:-1], the_path_is[1:])]
                     for temp5 in lines_to_use:
                         self._lines[temp5].state[the_ch_is] = 0
@@ -567,7 +567,7 @@ class Network:
                 elif k >= len(possible_paths):
                     the_path_is = list(the_path_is)
                     for c in all_possible_connections:
-                        if c[0] == the_path_is[0] and c[-1] == the_path_is[1]:
+                        if c[0] == the_path_is[0] and c[-1] == the_path_is[-1]:
                             all_possible_connections.remove(c)
                             blk = blk + 1
                     if soglia > 300:
@@ -581,18 +581,17 @@ class Network:
         elif selection == 'snr':
             list_of_snr = []
             list_of_bit_rate = []
-            blocked_connections = 0
             requested_connections = 0
+            all_connections = 0
             nodes = []
             blk = 0
-            soglia = 0
             blocking_ratio = 0
             for n in self._nodes.keys():
                 nodes.append(n)
             all_possible_connections = [x + y for x, y in itertools.permutations(nodes, 2)]
             # print(trf_mtrx)
-            while flag_control == False or blocking_ratio > th:
-                values = self.traffic_matrix_management(trf_mtrx, blocking_ratio, th)
+            while flag_control == False and blocking_ratio < th:
+                values = self.traffic_matrix_management(trf_mtrx, all_possible_connections)
                 input = values[0]
                 output = values[1]
                 temp = connection.Connection(input, output, 1e-3)
@@ -639,6 +638,7 @@ class Network:
                         print('the connection over this path is rejected')
                         break
                     self.propagate(light_path)
+                    all_connections = all_connections + 1
                     lines_to_use = [''.join(pair) for pair in zip(the_path_is[:-1], the_path_is[1:])]
                     for temp5 in lines_to_use:
                         self._lines[temp5].state[the_ch_is] = 0
@@ -664,19 +664,16 @@ class Network:
                     list_of_snr.append(temp.snr)
                     list_of_bit_rate.append(temp.bit_rate)
                 elif k >= len(possible_paths):
-                    # print('non riesco ad allocare il traffico')
+                    print('non riesco ad allocare il traffico')
                     the_path_is = list(the_path_is)
                     for c in all_possible_connections:
-                        if c[0] == the_path_is[0] and c[-1] == the_path_is[1]:
+                        if c[0] == the_path_is[0] and c[-1] == the_path_is[-1]:
                             all_possible_connections.remove(c)
-                            blk = blk + 1
-                    if soglia > 300:
-                        flag_control = True
+                    blk = blk + 1
                     temp.snr = 0
                     temp.latency = None
-                    soglia = soglia + 1
                 blocking_ratio = (blk/requested_connections)
-                #print(blocking_ratio)
+            # print('allocated connections' + str(all_connections))
             return list_of_snr, list_of_bit_rate, trf_mtrx, blk, requested_connections
 
     def update_route_space(self):

@@ -11,17 +11,17 @@ weighted_paths.connect()
 weighted_paths.draw()
 # parameters
 sel = 'snr'
-MC_runs = 40
+MC_runs = 30
 M = 20
 # initialize
 
 list_of_trf_mtrx_tot = []
-blocking_ratio_th = np.linspace(0.001, 0.1, 100)
+blocking_ratio_th = np.linspace(0.001, 0.3, 100)
 i = 0
 t = 0
 # MC loop
 for th in blocking_ratio_th:
-    print(len(blocking_ratio_th)-1)
+    print(len(blocking_ratio_th)-t)
     i = 0
     for i in range(MC_runs):
         # print((MC_runs-i))
@@ -41,6 +41,7 @@ for th in blocking_ratio_th:
         weighted_paths.n_amplifiers_calc_lines()
         i = i + 1
     list_of_trf_mtrx_tot.append(list_of_trf_mtrx)
+    t = t+1
 
 
 mtrx_start = weighted_paths.creation_of_random_traffic_matrix(M)
@@ -69,6 +70,6 @@ for sublist in result:
                     total += nested_value
     averages.append(total / len(sublist))
 print(averages)
-with open('averages1.pickle', 'wb') as f:
+with open('averages7_2.pickle', 'wb') as f:
     pickle.dump(averages, f)
 

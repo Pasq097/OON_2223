@@ -11,7 +11,7 @@ weighted_paths.draw()
 sel = 'snr'
 MC_runs = 30
 M = 1
-threshold_M = 20
+threshold_M = 15
 # initialize
 list_snr_tot = []
 list_latency_tot = []
@@ -53,8 +53,8 @@ if sel == 'snr':
     # graph2
     BlockedConnectionsGraph.block_conn(threshold_M, all_blocked_connections)
     # graph
-    graph0 = BlockingRatio.blocking_ratio_hist(all_blocked_connections,all_connections_req, threshold_M)
-    graph0.show()
+    #graph0 = BlockingRatio.blocking_ratio_hist(all_blocked_connections,all_connections_req, threshold_M)
+    #graph0.show()
     # graph3
     graph2 = BitRateHist.bit_rate_hist(list_bit_rate_tot)
     graph2.show()

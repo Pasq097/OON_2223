@@ -6,6 +6,7 @@ def blocking_ratio_hist(all_blocked_connections, all_conn_request, M):
     blocking_ratio = []
     for x, y in zip(all_blocked_connections, all_conn_request):
         blocking_ratio.append((x / y) * 100)
+    print(blocking_ratio)
     x_axis = list(range(x + 1))
     average = sum(blocking_ratio[x:]) / len(blocking_ratio[x:])
     y_axis = blocking_ratio[:x] + [average for i in range(x, len(x_axis))]

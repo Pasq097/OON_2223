@@ -62,17 +62,16 @@ class Node:
     def propagate(self, light_path):
         # it has to propagate the signal_information, in the node the next element is a line
         # we need to access the dict successive and update the path
-        light_path.update_path()  # update the path so if the path in the obj was A,B,C.. it will # be B,C,D..
+        # update the path so if the path in the obj was A,B,C.. it will # be B,C,D.. note I'm moving "on the nodes" not the line, the propagate of line don't need to update the path
         # path = signal_information.path    # successive = {"AB": obj of the line AB}
         # set for each line the optimal launch power
+        light_path.update_path()
         the_current_power_is = light_path.signal_power
-        light_path.signal_power = 0.9*10**-3
-        # print(light_path.signal_power)
-
+        light_path.signal_power = 1*10**-3
         for line in self._successive:
-            if len(light_path.path) == 0:
+            if len(light_path.path) == 0:        # we reach the destination node
                 return
-            if light_path.path[0] == line[1]:
-                p_opt = self._successive[line].propagate(light_path)
-                light_path.signal_power = p_opt + 1
+            if light_path.path[0] == line[1]:    # propagate on the successive line
+                p_opt = self._successive[line].propagate(light_path)   # set the optimal power
+                light_path.signal_power = p_opt
                 self._successive[line].propagate(light_path)

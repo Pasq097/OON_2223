@@ -1,17 +1,12 @@
-import matplotlib.pyplot as plt
 import pickle
 from core import network
-from Functions_charts import BitRateHist, BlockedConnectionsGraph, CapacityAllocated, DataAllocatedPerLink, chart2, \
-    snrMC, LatencyDistribution, BlockingRatio
 import numpy as np
-# Network congestion
-# For a given value of M, fixed number of Monte Carlo runs. For each run collect the metrics of interest
 weighted_paths = network.Network()
 weighted_paths.connect()
 weighted_paths.draw()
 # parameters
 sel = 'snr'
-MC_runs = 100
+MC_runs = 30
 M = 20
 # initialize
 
@@ -19,15 +14,15 @@ list_of_trf_mtrx_tot = []
 blocking_ratio_th = np.linspace(0.001, 0.3, 100)
 i = 0
 t = 0
+
 # MC loop
 for th in blocking_ratio_th:
     print(len(blocking_ratio_th)-t)
+    list_of_trf_mtrx = []
     i = 0
     for i in range(MC_runs):
         # print((MC_runs-i))
         # print(MC_runs - i)
-        list_of_trf_mtrx = []
-
         weighted_paths = network.Network()
         weighted_paths.connect()
         var = weighted_paths.stream(sel, M, th)
@@ -42,7 +37,6 @@ for th in blocking_ratio_th:
         i = i + 1
     list_of_trf_mtrx_tot.append(list_of_trf_mtrx)
     t = t+1
-
 
 mtrx_start = weighted_paths.creation_of_random_traffic_matrix(M)
 
@@ -69,7 +63,8 @@ for sublist in result:
                 if key != nested_key:
                     total += nested_value
     averages.append(total / len(sublist))
-print(averages)
-with open('averages2_2.pickle', 'wb') as f:
+
+
+with open('averages3_3.pickle', 'wb') as f:
     pickle.dump(averages, f)
 

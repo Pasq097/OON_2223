@@ -1,8 +1,8 @@
-# Define the 'constructor',the 'getter' and the 'setter' methods for all the attributes
+
 class SignalInformation:
     """model the signal information"""
 
-    def __init__(self, signal_power, path):  # constructor
+    def __init__(self, signal_power, path):          # constructor
         """Initialize attributes"""
         self._signal_power = signal_power
         self._noise_power = 0

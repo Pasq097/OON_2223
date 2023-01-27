@@ -1,4 +1,3 @@
-# Definition of the class Connection 
 
 class Connection:
     def __init__(self, input, output, signal_power):  # constructor

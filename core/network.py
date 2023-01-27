@@ -96,7 +96,7 @@ class Network:
         if "transceiver" in self._dictionary_2:
             self._strategy.append(self._dictionary_2[key]['transceiver'])
         else:
-            self._strategy.append('shannon')
+            self._strategy.append('flex_rate')
 
         number_of_channels = self._dictionary_2['A']['switching_matrix']
         self.n_ch = len(number_of_channels['B']['B'])
@@ -431,7 +431,7 @@ class Network:
                     dict[i][j] = 0
         return dict
 
-    def traffic_matrix_management(self, traffic_matrix, all_possible_connections, blocking_ratio, th):
+    def traffic_matrix_management(self, traffic_matrix, all_possible_connections):
         # creates and manages the connections given a traffic matrix
         flag = 0
         flag_control_1 = False
@@ -468,7 +468,7 @@ class Network:
             pd.set_option('display.max_rows', None)
             self._route_space.iloc[i] = 1
 
-    def stream(self, selection='snr', M=1, th=0.3):
+    def stream(self, selection='snr', M=1, th=1):
         # Route space has to be a pandas dataframe that for all the possible paths describe the availability for each CH
         #         1    2    3     4     5  ... 10
         # A->B    0    0    1     0     1  ... 1
@@ -580,8 +580,8 @@ class Network:
             for n in self._nodes.keys():
                 nodes.append(n)
             all_possible_connections = [x + y for x, y in itertools.permutations(nodes, 2)]
-            while flag_control == False and blocking_ratio < th:
-                values = self.traffic_matrix_management(trf_mtrx, all_possible_connections,blocking_ratio,th=0.3)
+            while flag_control == False: # and blocking_ratio < th:
+                values = self.traffic_matrix_management(trf_mtrx, all_possible_connections)
                 input = values[0]
                 output = values[1]
                 temp = connection.Connection(input, output, 1e-3)
@@ -605,6 +605,7 @@ class Network:
                         break
                     else:
                         k = k + 1
+                        the_path_is = temporary
                 if k < len(possible_paths):
                     signal_power = temp.signal_power
                     light_path = LightPath.LightPath(signal_power, the_path_is, the_ch_is)
@@ -619,6 +620,7 @@ class Network:
                     temp.bit_rate = bit_rate
                     if bit_rate == 0:  # zero bit rate case, need to reject the connection
                         print('the connection over this path is rejected')
+                        blk = blk + 1
                         break
                     self.propagate(light_path)
                     all_connections = all_connections + 1
@@ -646,13 +648,15 @@ class Network:
                     list_of_bit_rate.append(temp.bit_rate)
                 elif k >= len(possible_paths):
                     # print('non riesco ad allocare il traffico')
+                    blk = blk + 1
+                    temp.snr = 0
+                    temp.latency = None
                     the_path_is = list(the_path_is)
                     for c in all_possible_connections:
                         if c[0] == the_path_is[0] and c[-1] == the_path_is[-1]:
                             all_possible_connections.remove(c)
-                    blk = blk + 1
-                    temp.snr = 0
-                    temp.latency = None
+                    if len(all_possible_connections) == 0:
+                        break
                 blocking_ratio = (blk/requested_connections)
             return list_of_snr, list_of_bit_rate, trf_mtrx, blk, requested_connections
 

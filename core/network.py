@@ -439,8 +439,8 @@ class Network:
             conn = random.sample(all_possible_connections, 1)
             inp, out = conn[0][0], conn[0][1]
             x = traffic_matrix[inp][out]
+            print(traffic_matrix)
             if x == 0 :
-                flag = 0
                 values = []
                 for x in traffic_matrix.values():
                     for y in x.values():
@@ -454,19 +454,19 @@ class Network:
 
         return inp, out, flag_control_1
 
-    def reset_of_the_ch(self):
-        for line_obj in self._lines:
-            self._lines[line_obj]._state = np.ones(6, dtype=int)
-
-    def reset_route_space(self):
-        res = list(self._route_space.index)
-        all_paths = []
-        for var_t in res:
-            var_t = var_t.replace('->', '')
-            all_paths.append(var_t)
-        for i in range(0, len(all_paths)):
-            pd.set_option('display.max_rows', None)
-            self._route_space.iloc[i] = 1
+    # def reset_of_the_ch(self):
+    #     for line_obj in self._lines:
+    #         self._lines[line_obj]._state = np.ones(6, dtype=int)
+    #
+    # def reset_route_space(self):
+    #     res = list(self._route_space.index)
+    #     all_paths = []
+    #     for var_t in res:
+    #         var_t = var_t.replace('->', '')
+    #         all_paths.append(var_t)
+    #     for i in range(0, len(all_paths)):
+    #         pd.set_option('display.max_rows', None)
+    #         self._route_space.iloc[i] = 1
 
     def stream(self, selection='snr', M=1, th=1):
         # Route space has to be a pandas dataframe that for all the possible paths describe the availability for each CH
@@ -584,10 +584,13 @@ class Network:
                 values = self.traffic_matrix_management(trf_mtrx, all_possible_connections)
                 input = values[0]
                 output = values[1]
+                #print('inp out')
+                #print(input+output)
                 temp = connection.Connection(input, output, 1e-3)
                 requested_connections = requested_connections + 1
                 flag_control = values[2]
                 possible_paths = self.find_best_snr(input, output)
+                #print(possible_paths)
                 k = 0
                 for temporary in possible_paths:
                     possible_lines = [''.join(pair) for pair in zip(temporary[:-1], temporary[1:])]
@@ -607,6 +610,7 @@ class Network:
                         k = k + 1
                         the_path_is = temporary
                 if k < len(possible_paths):
+                    #print(the_path_is)
                     signal_power = temp.signal_power
                     light_path = LightPath.LightPath(signal_power, the_path_is, the_ch_is)
                     x = temporary[0]
@@ -617,6 +621,7 @@ class Network:
                     if new_value < 0:
                         new_value = 0
                     trf_mtrx[temp.input][temp.output] = new_value
+                    # print(trf_mtrx)
                     temp.bit_rate = bit_rate
                     if bit_rate == 0:  # zero bit rate case, need to reject the connection
                         print('the connection over this path is rejected')
@@ -647,8 +652,9 @@ class Network:
                     list_of_snr.append(temp.snr)
                     list_of_bit_rate.append(temp.bit_rate)
                 elif k >= len(possible_paths):
-                    # print('non riesco ad allocare il traffico')
+                    #print('non riesco ad allocare il traffico')
                     blk = blk + 1
+                    print(blk)
                     temp.snr = 0
                     temp.latency = None
                     the_path_is = list(the_path_is)

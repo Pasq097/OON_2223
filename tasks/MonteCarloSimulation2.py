@@ -9,8 +9,8 @@ weighted_paths.connect()
 weighted_paths.draw()
 # parameters
 sel = 'snr'
-MC_runs = 21
-M = 0
+MC_runs = 3
+M = 1
 threshold_M = 2
 # initialize
 list_snr_tot = []
@@ -38,6 +38,7 @@ if sel == 'snr':
         e = var[4]
         all_connections_req.append(e)
         all_blocked_connections.append(d)
+        # print(all_blocked_connections)
         list_of_trf_mtrx.append(c)
         list_bit_rate_tot.append(b)
         list_snr_tot.append(a)

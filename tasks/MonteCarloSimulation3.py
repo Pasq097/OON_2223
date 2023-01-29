@@ -7,7 +7,7 @@ weighted_paths.draw()
 # parameters
 sel = 'snr'
 MC_runs = 30
-M = 20
+M = 80
 # initialize
 
 list_of_trf_mtrx_tot = []
@@ -65,6 +65,6 @@ for sublist in result:
     averages.append(total / len(sublist))
 
 
-with open('averages3_3.pickle', 'wb') as f:
+with open('averages8_3.pickle', 'wb') as f:
     pickle.dump(averages, f)
 

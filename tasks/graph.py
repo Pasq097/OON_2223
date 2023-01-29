@@ -5,13 +5,13 @@ from scipy.signal import savgol_filter
 
 blocking_ratio_th = np.linspace(0.001, 0.3, 100)
 
-with open('averages3_1.pickle', 'rb') as f:
+with open('averages6_1.pickle', 'rb') as f:
     list1 = pickle.load(f)
 
-with open('averages3_2.pickle', 'rb') as f:
+with open('averages7_2.pickle', 'rb') as f:
     list2 = pickle.load(f)
 
-with open('averages3_3.pickle', 'rb') as f:
+with open('averages8_3.pickle', 'rb') as f:
     list3 = pickle.load(f)
 
 

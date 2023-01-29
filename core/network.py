@@ -96,7 +96,7 @@ class Network:
         if "transceiver" in self._dictionary_2:
             self._strategy.append(self._dictionary_2[key]['transceiver'])
         else:
-            self._strategy.append('flex_rate')
+            self._strategy.append('shannon')
 
         number_of_channels = self._dictionary_2['A']['switching_matrix']
         self.n_ch = len(number_of_channels['B']['B'])
@@ -431,40 +431,26 @@ class Network:
                     dict[i][j] = 0
         return dict
 
-    def traffic_matrix_management(self, traffic_matrix, all_possible_connections):
-        # creates and manages the connections given a traffic matrix
-        flag = 0
-        flag_control_1 = False
-        while flag == 0:
-            conn = random.sample(all_possible_connections, 1)
-            inp, out = conn[0][0], conn[0][1]
-            x = traffic_matrix[inp][out]
-            print(traffic_matrix)
-            if x == 0 :
-                values = []
-                for x in traffic_matrix.values():
-                    for y in x.values():
-                        values.append(y)
-                flag_control_1 = all(val == 0 for val in values)
-            if flag_control_1 == True:
-                break
-            else:
-                flag = 1
-                flag_control_1 = False
+    def traffic_matrix_management(self, traffic_matrix):
+        values = []
 
-        return inp, out, flag_control_1
+        for x in traffic_matrix.values():
+            for y in x.values():
+                values.append(y)
+        flag_control_1 = all(val == 0 for val in values)
+
+        return flag_control_1
+
+
+
+
 
     # def reset_of_the_ch(self):
     #     for line_obj in self._lines:
-    #         self._lines[line_obj]._state = np.ones(6, dtype=int)
-    #
+    #         self._lines[line_obj]._state = np.ones(10, dtype=int)
+
     # def reset_route_space(self):
-    #     res = list(self._route_space.index)
-    #     all_paths = []
-    #     for var_t in res:
-    #         var_t = var_t.replace('->', '')
-    #         all_paths.append(var_t)
-    #     for i in range(0, len(all_paths)):
+    #     for i in range(0, 350):
     #         pd.set_option('display.max_rows', None)
     #         self._route_space.iloc[i] = 1
 
@@ -485,13 +471,13 @@ class Network:
             list_of_bit_rate = []
             blocked_connections = 0
             requested_connections = 0
-            established_conn = 0
             nodes = []
             blk = 0
             soglia = 0
             for n in self._nodes.keys():
                 nodes.append(n)
             all_possible_connections = [x + y for x, y in itertools.permutations(nodes, 2)]
+            # print(trf_mtrx)
             while flag_control == False:
                 values = self.traffic_matrix_management(trf_mtrx)
                 input = values[0]
@@ -509,7 +495,8 @@ class Network:
                     for temp2 in possible_lines:
                         dict_for_ch[temp2] = self._lines[temp2].state
                     nodes_for_swm = temporary.lstrip(temporary[0]).rstrip(temporary[-1])
-                    flag_is = Checking_ch.checking_ch(dict_for_ch, nodes_for_swm, self._nodes, temporary)  # in flag_is is stored if there is CH free
+                    flag_is = Checking_ch.checking_ch(dict_for_ch, nodes_for_swm, self._nodes,
+                                                      temporary)  # in flag_is is stored if there is CH free
                     # and which one is it, the index
                     if flag_is[0] == 1:
                         the_path_is = temporary
@@ -518,7 +505,11 @@ class Network:
                     else:
                         k = k + 1
                 if k < len(possible_paths):
+                    # print(the_path_is)
+                    # print('path' + the_path_is)
+                    # print('ch'+str(the_ch_is))
                     signal_power = temp.signal_power
+                    # print(the_path_is)
                     light_path = LightPath.LightPath(signal_power, the_path_is, the_ch_is)
                     x = temporary[0]
                     strategy = self._nodes[x].transceiver
@@ -528,19 +519,23 @@ class Network:
                     if new_value < 0:
                         new_value = 0
                     trf_mtrx[temp.input][temp.output] = new_value
+                    # print('the bit rate is ' + str(bit_rate))
+                    # print(trf_mtrx)
+                    # print('the bit rate is ' + str(bit_rate))
                     temp.bit_rate = bit_rate
                     if bit_rate == 0:  # zero bit rate case, need to reject the connection
                         print('the connection over this path is rejected')
                         break
                     self.propagate(light_path)
-                    established_conn = established_conn + 1
                     lines_to_use = [''.join(pair) for pair in zip(the_path_is[:-1], the_path_is[1:])]
                     for temp5 in lines_to_use:
                         self._lines[temp5].state[the_ch_is] = 0
                     nodes_for_swm = the_path_is.lstrip(the_path_is[0]).rstrip(the_path_is[-1])
                     for n_swm in nodes_for_swm:
                         index_swm = the_path_is.index(n_swm)
-                        block = (self._nodes[n_swm].switching_matrix[the_path_is[index_swm - 1]][the_path_is[index_swm + 1]])
+                        block = (
+                            self._nodes[n_swm].switching_matrix[the_path_is[index_swm - 1]][the_path_is[index_swm + 1]])
+                        # print('the block is' + str(block))
                         block[the_ch_is] = 0
                         if the_ch_is == 0:
                             block[the_ch_is + 1] = 0
@@ -549,6 +544,7 @@ class Network:
                         else:
                             block[the_ch_is + 1] = 0
                             block[the_ch_is - 1] = 0
+                        # print(block)
                     x = math.log10(light_path.signal_power / light_path.noise_power)
                     y = 10 * x
                     temp.snr = y
@@ -558,7 +554,7 @@ class Network:
                 elif k >= len(possible_paths):
                     the_path_is = list(the_path_is)
                     for c in all_possible_connections:
-                        if c[0] == the_path_is[0] and c[-1] == the_path_is[-1]:
+                        if c[0] == the_path_is[0] and c[-1] == the_path_is[1]:
                             all_possible_connections.remove(c)
                             blk = blk + 1
                     if soglia > 300:
@@ -572,98 +568,105 @@ class Network:
         elif selection == 'snr':
             list_of_snr = []
             list_of_bit_rate = []
+            blocked_connections = 0
             requested_connections = 0
-            all_connections = 0
             nodes = []
             blk = 0
+            soglia = 0
             blocking_ratio = 0
-            for n in self._nodes.keys():
-                nodes.append(n)
-            all_possible_connections = [x + y for x, y in itertools.permutations(nodes, 2)]
-            while flag_control == False: # and blocking_ratio < th:
-                values = self.traffic_matrix_management(trf_mtrx, all_possible_connections)
-                input = values[0]
-                output = values[1]
-                #print('inp out')
-                #print(input+output)
-                temp = connection.Connection(input, output, 1e-3)
-                requested_connections = requested_connections + 1
-                flag_control = values[2]
-                possible_paths = self.find_best_snr(input, output)
-                #print(possible_paths)
+            all_possible_connections = [x + y for x, y in itertools.permutations(self._nodes.keys(),2)]
+            while flag_control == False and blocking_ratio < th:
+                values = self.traffic_matrix_management(trf_mtrx)
+                flag_control = values
+                values = []
+                for x in trf_mtrx.values():
+                    for y in x.values():
+                        values.append(y)
+                x = max(values)
+                if x == 0:
+                    break
+                if len(all_possible_connections) == 0:
+                    break
+                soglia = soglia + 1
+                if soglia > 1000:
+                    break
+                cop = random.choice(all_possible_connections)
+                input = cop[0]
+                output = cop[1]
                 k = 0
-                for temporary in possible_paths:
-                    possible_lines = [''.join(pair) for pair in zip(temporary[:-1], temporary[1:])]
-                    # IDEA -> create a dynamic dictionary like this DICT = {'LINE_LABEL': CHANNEL.STATES,.....}
-                    # after is possible to check each values in the lines of the path to check for each line the same CH
-                    dict_for_ch = {}
-                    for temp2 in possible_lines:
-                        dict_for_ch[temp2] = self._lines[temp2].state
-                    nodes_for_swm = temporary.lstrip(temporary[0]).rstrip(temporary[-1])
-                    flag_is = Checking_ch.checking_ch(dict_for_ch, nodes_for_swm, self._nodes, temporary)  # in flag_is is stored if there is CH free
-                    # and which one is it, the index
-                    if flag_is[0] == 1:
-                        the_path_is = temporary
-                        the_ch_is = flag_is[1]
-                        break
-                    else:
-                        k = k + 1
-                        the_path_is = temporary
-                if k < len(possible_paths):
-                    #print(the_path_is)
-                    signal_power = temp.signal_power
-                    light_path = LightPath.LightPath(signal_power, the_path_is, the_ch_is)
-                    x = temporary[0]
-                    strategy = self._nodes[x].transceiver
-                    bit_rate = self.calculate_bit_rate(light_path, temporary, strategy)
-                    x = trf_mtrx[input][output]
-                    new_value = x - bit_rate
-                    if new_value < 0:
-                        new_value = 0
-                    trf_mtrx[temp.input][temp.output] = new_value
-                    # print(trf_mtrx)
-                    temp.bit_rate = bit_rate
-                    if bit_rate == 0:  # zero bit rate case, need to reject the connection
-                        print('the connection over this path is rejected')
-                        blk = blk + 1
-                        break
-                    self.propagate(light_path)
-                    all_connections = all_connections + 1
-                    lines_to_use = [''.join(pair) for pair in zip(the_path_is[:-1], the_path_is[1:])]
-                    for temp5 in lines_to_use:
-                        self._lines[temp5].state[the_ch_is] = 0
-                    nodes_for_swm = the_path_is.lstrip(the_path_is[0]).rstrip(the_path_is[-1])
-                    for n_swm in nodes_for_swm:
-                        index_swm = the_path_is.index(n_swm)
-                        block = (
-                            self._nodes[n_swm].switching_matrix[the_path_is[index_swm - 1]][the_path_is[index_swm + 1]])
-                        block[the_ch_is] = 0
-                        if the_ch_is == 0:
-                            block[the_ch_is + 1] = 0
-                        elif the_ch_is == self.n_ch - 1:
-                            block[the_ch_is - 1] = 0
+                x = trf_mtrx[input][output]
+                if x != 0:
+                    # print('ciao')
+                    temp = connection.Connection(input, output, 1e-3)
+                    requested_connections = requested_connections + 1
+                    possible_paths = self.find_best_snr(input, output)
+                    for temporary in possible_paths:
+                        possible_lines = [''.join(pair) for pair in zip(temporary[:-1], temporary[1:])]
+                        # IDEA -> create a dynamic dictionary like this DICT = {'LINE_LABEL': CHANNEL.STATES,.....}
+                        # after is possible to check each values in the lines of the path to check for each line the same CH
+                        dict_for_ch = {}
+                        for temp2 in possible_lines:
+                            dict_for_ch[temp2] = self._lines[temp2].state
+                        nodes_for_swm = temporary.lstrip(temporary[0]).rstrip(temporary[-1])
+                        flag_is = Checking_ch.checking_ch(dict_for_ch, nodes_for_swm, self._nodes, temporary)  # in flag_is is stored if there is CH free
+                        # and which one is it, the index
+                        if flag_is[0] == 1:
+                            the_path_is = temporary
+                            the_ch_is = flag_is[1]
+                            break
                         else:
-                            block[the_ch_is + 1] = 0
-                            block[the_ch_is - 1] = 0
-                    x = math.log10(light_path.signal_power / light_path.noise_power)
-                    y = 10 * x
-                    temp.snr = y
-                    temp.latency = light_path.latency
-                    list_of_snr.append(temp.snr)
-                    list_of_bit_rate.append(temp.bit_rate)
-                elif k >= len(possible_paths):
-                    #print('non riesco ad allocare il traffico')
-                    blk = blk + 1
-                    print(blk)
-                    temp.snr = 0
-                    temp.latency = None
-                    the_path_is = list(the_path_is)
-                    for c in all_possible_connections:
-                        if c[0] == the_path_is[0] and c[-1] == the_path_is[-1]:
-                            all_possible_connections.remove(c)
-                    if len(all_possible_connections) == 0:
-                        break
-                blocking_ratio = (blk/requested_connections)
+                            k = k + 1
+                            the_path_is = temporary
+                    if k < len(possible_paths):
+                        signal_power = temp.signal_power
+                        light_path = LightPath.LightPath(signal_power, the_path_is, the_ch_is)
+                        x = temporary[0]
+                        strategy = self._nodes[x].transceiver
+                        bit_rate = self.calculate_bit_rate(light_path, temporary, strategy)
+                        x = trf_mtrx[input][output]
+                        new_value = x - bit_rate
+                        if new_value < 0:
+                            new_value = 0
+                        trf_mtrx[temp.input][temp.output] = new_value
+                        temp.bit_rate = bit_rate
+                        if bit_rate == 0:  # zero bit rate case, need to reject the connection
+                            print('the connection over this path is rejected')
+                            break
+                        self.propagate(light_path)
+                        lines_to_use = [''.join(pair) for pair in zip(the_path_is[:-1], the_path_is[1:])]
+                        for temp5 in lines_to_use:
+                            self._lines[temp5].state[the_ch_is] = 0
+                        nodes_for_swm = the_path_is.lstrip(the_path_is[0]).rstrip(the_path_is[-1])
+                        for n_swm in nodes_for_swm:
+                            index_swm = the_path_is.index(n_swm)
+                            block = (
+                                self._nodes[n_swm].switching_matrix[the_path_is[index_swm - 1]][the_path_is[index_swm + 1]])
+                            # print('the block is' + str(block))
+                            block[the_ch_is] = 0
+                            if the_ch_is == 0:
+                                block[the_ch_is + 1] = 0
+                            elif the_ch_is == self.n_ch - 1:
+                                block[the_ch_is - 1] = 0
+                            else:
+                                block[the_ch_is + 1] = 0
+                                block[the_ch_is - 1] = 0
+                        x = math.log10(light_path.signal_power / light_path.noise_power)
+                        y = 10 * x
+                        temp.snr = y
+                        temp.latency = light_path.latency
+                        list_of_snr.append(temp.snr)
+                        list_of_bit_rate.append(temp.bit_rate)
+                    elif k >= len(possible_paths):
+                        blk = blk + 1
+                        for c in all_possible_connections:
+                            if c[0] == the_path_is[0] and c[-1] == the_path_is[-1]:
+                                all_possible_connections.remove(c)
+                        if len(all_possible_connections) == 0:
+                            flag_control = True
+                            break
+                        temp.snr = 0
+                        temp.latency = None
+                    blocking_ratio = blk/requested_connections
             return list_of_snr, list_of_bit_rate, trf_mtrx, blk, requested_connections
 
     def update_route_space(self):

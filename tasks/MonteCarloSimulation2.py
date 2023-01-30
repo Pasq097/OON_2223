@@ -9,9 +9,9 @@ weighted_paths.connect()
 weighted_paths.draw()
 # parameters
 sel = 'snr'
-MC_runs = 80
-M = 1
-threshold_M = 78
+MC_runs = 30
+M = 5
+threshold_M = 0
 # initialize
 list_snr_tot = []
 list_latency_tot = []

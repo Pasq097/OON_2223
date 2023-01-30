@@ -14,7 +14,7 @@ class Line:
                                              # 'till the destination
         self._n_amplifiers = None            # Calculate this number with the line length, one amplifier for 80 km
         self._gain = 16                      # dB
-        self._noise_figure = 5.5             # dB
+        self._noise_figure = 5.5             # dB  5.5
         self._alpha_dB = 0.2 / 10**3         # dB / m
         self._beta = 2.13 * 10**-26          # s^2/m
         self._gamma = 1.27 * 10**-3          # Wm-1

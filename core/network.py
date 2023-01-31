@@ -363,14 +363,14 @@ class Network:
         if sel == 'latency':
             for i in range(0, self.n_ch):
                 dict_01[i + 1] = total_accumulated_latency
-            pd.set_option('display.max_rows', None)
+            # pd.set_option('display.max_rows', None)
             df_latency = pd.DataFrame(dict_01, index=res, dtype=float)
             return df_latency
         elif sel == 'snr':
             dict_02 = {}
             for i in range(0, self.n_ch):
                 dict_02[i + 1] = signal_to_noise_ratio
-            pd.set_option('display.max_rows', None)
+            # pd.set_option('display.max_rows', None)
             df_snr = pd.DataFrame(dict_02, index=res, dtype=float)
             return df_snr
 
@@ -379,10 +379,10 @@ class Network:
         df = self.probe('snr')
         var = list(df.loc[path_to_search])
         var_lin = 10 ** (var[0] / self.n_ch)
-        R_s = light_path.Rs
+        R_s = light_path.Rs                         # Symbol rate
         # R_s = 32 * 10 ** 9  # GHz
-        B_n = 12.5 * 10 ** 9  # GHz
-        BER = 10 ** -3
+        B_n = 12.5 * 10 ** 9  # GHz                 # Bandwidth Noise
+        BER = 10 ** -3                              # Bit error rate
         # print('the GSNR is '+ str(var[0]))
         if strategy == 'fixed_rate':
             x = (R_s / B_n)
@@ -571,6 +571,7 @@ class Network:
         elif selection == 'snr':
             list_of_snr = []
             list_of_bit_rate = []
+            list_of_connections_nodes = []
             blocked_connections = 0
             requested_connections = 0
             nodes = []
@@ -602,6 +603,7 @@ class Network:
                     # print('ciao')
                     temp = connection.Connection(input, output, 1e-3)
                     requested_connections = requested_connections + 1
+                    list_of_connections_nodes.append(input+output)
                     possible_paths = self.find_best_snr(input, output)
                     for temporary in possible_paths:
                         possible_lines = [''.join(pair) for pair in zip(temporary[:-1], temporary[1:])]
@@ -670,7 +672,7 @@ class Network:
                         temp.snr = 0
                         temp.latency = None
                     blocking_ratio = blk/requested_connections
-            return list_of_snr, list_of_bit_rate, trf_mtrx, blk, requested_connections
+            return list_of_snr, list_of_bit_rate, trf_mtrx, blk, requested_connections, list_of_connections_nodes
 
     def update_route_space(self):
         res = list(self._route_space.index)

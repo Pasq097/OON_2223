@@ -1,16 +1,18 @@
 from core import network
 from Functions_charts import BitRateHist, BlockedConnectionsGraph, CapacityAllocated, DataAllocatedPerLink, chart2, \
-    snrMC, LatencyDistribution, BlockingRatio
+    snrMC, LatencyDistribution, BlockingRatio, connectivity_matrix
 
 # Network congestion
 # For a given value of M, fixed number of Monte Carlo runs. For each run collect the metrics of interest
 weighted_paths = network.Network()
 weighted_paths.connect()
 weighted_paths.draw()
+print(weighted_paths.probe('latency'))
+
 # parameters
 sel = 'snr'
 MC_runs = 30
-M = 5
+M = 20
 threshold_M = 0
 # initialize
 list_snr_tot = []
@@ -36,6 +38,7 @@ if sel == 'snr':
         c = var[2]
         d = var[3]
         e = var[4]
+        f = var[5]
         all_connections_req.append(e)
         all_blocked_connections.append(d)
         # print(all_blocked_connections)
@@ -46,6 +49,7 @@ if sel == 'snr':
         i = i + 1
         if i <= threshold_M:
             M = M + 1
+    connectivity_matrix.connectivity_matrix_graph(f)
     # graph1
     trf_in = weighted_paths.creation_of_random_traffic_matrix(M)
     #print(trf_in)

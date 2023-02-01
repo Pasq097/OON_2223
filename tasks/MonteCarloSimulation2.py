@@ -12,8 +12,9 @@ print(weighted_paths.probe('latency'))
 # parameters
 sel = 'snr'
 MC_runs = 30
-M = 20
-threshold_M = 0
+M = 1
+threshold_M = 20
+# th = 0.2
 # initialize
 list_snr_tot = []
 list_latency_tot = []
@@ -52,14 +53,14 @@ if sel == 'snr':
     connectivity_matrix.connectivity_matrix_graph(f)
     # graph1
     trf_in = weighted_paths.creation_of_random_traffic_matrix(M)
-    #print(trf_in)
+    # print(trf_in)
     graph = DataAllocatedPerLink.allocation_per_link(trf_in, list_of_trf_mtrx)
     graph.show()
     # graph2
     BlockedConnectionsGraph.block_conn(threshold_M, all_blocked_connections)
     # graph
-    #graph0 = BlockingRatio.blocking_ratio_hist(all_blocked_connections,all_connections_req, threshold_M)
-    #graph0.show()
+    graph0 = BlockingRatio.blocking_ratio_hist(all_blocked_connections, all_connections_req, threshold_M)
+    graph0.show()
     # graph3
     graph2 = BitRateHist.bit_rate_hist(list_bit_rate_tot)
     graph2.show()

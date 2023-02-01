@@ -579,7 +579,7 @@ class Network:
             soglia = 0
             blocking_ratio = 0
             all_possible_connections = [x + y for x, y in itertools.permutations(self._nodes.keys(),2)]
-            while flag_control == False: # and blocking_ratio < th:
+            while flag_control == False and blocking_ratio < th:
                 values = self.traffic_matrix_management(trf_mtrx)
                 flag_control = values
                 values = []

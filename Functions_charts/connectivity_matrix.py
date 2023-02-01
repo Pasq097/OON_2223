@@ -1,7 +1,6 @@
 import matplotlib.pyplot as plt
 import matplotlib.cm as cm
 import numpy as np
-import matplotlib.colors as colors
 
 
 def connectivity_matrix_graph(list_of_connected_nodes):
@@ -34,9 +33,14 @@ def connectivity_matrix_graph(list_of_connected_nodes):
     ax = fig.add_subplot(111, projection='3d')
     x, y = np.meshgrid(range(conn_matrix_norm.shape[0]), range(conn_matrix_norm.shape[1]))
     color = cm.viridis((conn_matrix_norm.flatten() - np.min(conn_matrix_norm)) / (np.max(conn_matrix_norm) - np.min(conn_matrix_norm)))
-    surf = ax.bar3d(x.flatten(), y.flatten(), np.zeros(conn_matrix_norm.size), 1, 1, conn_matrix_norm.flatten(), color=color)
+    surf = ax.bar3d(x.flatten(), y.flatten(), np.zeros(conn_matrix_norm.size), 0.5, 0.5, conn_matrix_norm.flatten(), color=color)
     fig.colorbar(surf, shrink=0.5, aspect=5)
-    # A StrMethodFormatter is used automatically
+    # A StrMethodFormatter is used automaticall
+    plt.title('connectivity matrix graph')
+    plt.xlabel('input nodes')
+    plt.ylabel('output nodes')
+
+    ax.set_zlabel('intensity')
     ax.set_xticks(range(len(nodes)))
     ax.set_xticklabels(nodes)
     ax.set_yticks(range(len(nodes)))

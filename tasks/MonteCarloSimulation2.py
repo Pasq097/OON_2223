@@ -12,8 +12,8 @@ print(weighted_paths.probe('latency'))
 # parameters
 sel = 'snr'
 MC_runs = 30
-M = 1
-threshold_M = 20
+M = 5
+threshold_M = 0
 # th = 0.2
 # initialize
 list_snr_tot = []

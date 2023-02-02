@@ -378,7 +378,7 @@ class Network:
         path_to_search = '->'.join(path)
         df = self.probe('snr')
         var = list(df.loc[path_to_search])
-        var_lin = 10 ** (var[0] / self.n_ch)
+        var_lin = 10 ** (var[0] / 10)
         R_s = light_path.Rs                         # Symbol rate
         # R_s = 32 * 10 ** 9  # GHz
         B_n = 12.5 * 10 ** 9  # GHz                 # Bandwidth Noise

@@ -5,6 +5,7 @@ import numpy as np
 
 def connectivity_matrix_graph(list_of_connected_nodes):
     # Get the unique nodes
+
     counter = {}
     for conn in list_of_connected_nodes:
         if conn in counter:
@@ -14,7 +15,6 @@ def connectivity_matrix_graph(list_of_connected_nodes):
     print(counter)
     nodes = set([node[0] for node in list_of_connected_nodes] + [node[1] for node in list_of_connected_nodes])
     nodes = sorted(list(nodes))
-    print(nodes)
 
     # Create a matrix to store the frequency of each connection
     conn_matrix = np.zeros((len(nodes), len(nodes)))
@@ -37,8 +37,8 @@ def connectivity_matrix_graph(list_of_connected_nodes):
     fig.colorbar(surf, shrink=0.5, aspect=5)
     # A StrMethodFormatter is used automaticall
     plt.title('connectivity matrix graph')
-    plt.xlabel('input nodes')
-    plt.ylabel('output nodes')
+    plt.ylabel('input nodes')
+    plt.xlabel('output nodes')
 
     ax.set_zlabel('intensity')
     ax.set_xticks(range(len(nodes)))
